@@ -7,11 +7,11 @@
     "site": {
         "title": "Dizzy Land",
         "postsPerPage": "5",
-        "url": "https://shawn11zx.github.io"
+        "url": "http://shawn11zx.github.io/blog/"
     },
     "socialnetwork": {},
     "theme": {
         "name": "Casper",
-        "url": "//shawn11zx.github.io/themes/Casper"
+        "url": "http://shawn11zx.github.io/blog/themes/Casper"
     }
 }
