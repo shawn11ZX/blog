@@ -1,17 +1,1 @@
-{
-    "meta": {
-        "username": "shawn11ZX",
-        "repositoryName": "blog",
-        "branch": "gh-pages"
-    },
-    "site": {
-        "title": "Dizzy Land",
-        "postsPerPage": "5",
-        "url": "http://shawn11zx.github.io/blog/"
-    },
-    "socialnetwork": {},
-    "theme": {
-        "name": "Casper",
-        "url": "http://shawn11zx.github.io/blog/themes/Casper"
-    }
-}
+{"meta":{"username":"shawn11ZX","repositoryName":"blog","branch":"gh-pages"},"site":{"title":"Dizzy Land","postsPerPage":"5","url":"https://shawn11ZX.github.io/blog"},"socialnetwork":{},"theme":{"name":"Casper","url":"//shawn11ZX.github.io/blog/themes/Casper"}}
