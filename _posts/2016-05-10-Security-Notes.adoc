@@ -1,14 +1,25 @@
+---
+layout: default
+title: Jekyll-Asciidoc Quickstart
+shortTitle: Security Notes
+documentationExpanded: false
+comments: true
+postsExpanded: true
+excerpt: excerpt
+root: ../../../
+---
+
 :toc: macro
 :toclevels: 4
 :sectnums:
-:imagesdir: /images
+:imagesdir:images
 :hp-tags: TLS, SSL, MAC
 
-= Security Notes
+=== Security Notes
 
 toc::[]
 
-== 重要的定义
+==== 重要的定义
 
 * Plain text(Clear text): 未加密的消息
 * Cipher: 加密算法
@@ -21,28 +32,28 @@ toc::[]
 * Key size(Key length): key的长度，和Bit Strength可能相同也可能不同。RSA Key length/Key size of 2048 bits has a Bit Strength of 112 bits.  
 * Hash(digest/fingerprint)：将无穷大的数据，变成**唯一/固定长度/很小** 的数据的过程。就像用人的指纹代表整个人。
 
-== 密码学
+==== 密码学
 
-=== 特点
+===== 特点
 * 假定Attacker知道算法而不知道密钥
 * 理论上可以暴力破解，但是用computationally infeasible保证不被破解，而且随着计算能力的提升，computationally infeasible会改变
 * 破解成功的人往往不会主动宣布自己破解了，因此需要temper proof或temper aware环境，或者定时修改密钥
 
-=== 应用
+===== 应用
 * confidentiality(机密性)
 * authentication 认证
 * integrity 完整性
 
 
-== 对称加密
+==== 对称加密
 
-=== 特点
+===== 特点
 * Symmetric encryption, single­key, shared­secret, private­key systems, 使用一个（组）key加解密
 * 一旦key泄露影响所有的人
 * 加密比非对称加密效率高，一般是加密bulk data streams的唯一方法
 * 常见key size: 64, 128, 192 or 256 bits.  
 
-=== 常见的算法
+===== 常见的算法
 
 * DES (Data Encryption Standard a.k.a Data Encryption Algorithm (DEA), 
 * Triple DES (TDES a.k.a. TDEA (Triple Data Encryption Algorithm)), 
@@ -52,13 +63,13 @@ toc::[]
 though attacks not yet proven or published)  
 
 
-=== 流程
+===== 流程
 
 image::Symmetric-Cryptography.png[]
 
-== 非对称加密
+==== 非对称加密
 
-=== 特点
+===== 特点
 
 * Asymmetric encryption algorithms, public­key cryptographic
 systems, nonsecret encryption, 使用一对key: a public and a private key
@@ -66,35 +77,35 @@ systems, nonsecret encryption, 使用一对key: a public and a private key
 * 一般not used to encrypt bulk data streams.  
 
 
-=== 常见算法
+===== 常见算法
 
 * RSA (after the  inventors Rivest, Shamir, and Adelman)
 * DSA (Digital Signature Algorithm) 
 * Elliptic Curve Cryptography (ECC)  
   
-=== 流程
+===== 流程
 
 image::Asymmetric-Cryptography.png[]
 
-=== 认证public key
+===== 认证public key
 A Public Key Infrastructure (PKI), trusted third party (CA).   
 
-== Hash
+==== Hash
 
 * 生成fingerprint保证integrity，问题是如何保证digest本身的integrity
 * To provide data integrity, any message could be simply encrypted. 但是太费CPU，可以通过Hash达到相同效果。
 
-=== 常见算法
+===== 常见算法
 * MD5 (Message Digest 5) 
 * SHA­1
 * SHA­2 family: SHA­224, SHA­256, SHA­384 and SHA­512  
 
-=== 流程
+===== 流程
 
 image::Message-Digest.png[]
 
 
-== MAC
+==== MAC
 
 * Message Authentication Code
 * 保证integerity和authentication
@@ -105,15 +116,15 @@ image::Message-Digest.png[]
 * CMAC（Cipher-based），使用对称加密
 * HMAC（hash-based），使用hash（更常用）
 
-=== 流程
+===== 流程
 
 image::MAC.png[]
 
-== Digital Signature
+==== Digital Signature
 * 同MAC一样，也是为了保证integerity和authentication
 * 先将message digest，再将digest加密
 
-=== 常见算法
+===== 常见算法
 * RSA­MD5, 
 * RSA­SHA­1
 * RSA­SHA­256
@@ -121,6 +132,6 @@ image::MAC.png[]
 * DSA (Digital Signature Algorithm: a US Government standard defined in FIPS­186 rev 4) 
 * ECDSA (Elliptic Curve Digital Signature Algorithm defined in FIPS­186 rev 4).  
 
-=== 流程
+===== 流程
 
 image::Digital-Signature.png[]
