@@ -49,69 +49,14 @@
     <!-- Main Blog Content -->
     <div class="large-9 columns" role="content">
 
-        <div id="preamble">
-<div class="sectionbody">
-<div class="paragraph">
-<p>You&#8217;ve successfully set up and deployed an Jekyll website powered by Asciidoc using the <a href="https://github.com/asciidoctor/jekyll-asciidoc-quickstart"><strong>Asciidoc-Jekyll-Quickstart</strong></a> project.  If everything is in order then changes to the Asciidoc content will be automatically published to your <code>gh_pages</code> branch and hosted via Jekyll and Github.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="what_do_i_do_now">What do I do now?</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Now that you&#8217;ve set up your website to run with Asciidoc you have a ton of options available to you.</p>
-</div>
-<div class="sect3">
-<h4 id="edit_content">Edit content</h4>
-<div class="paragraph">
-<p>Editing content is very simple.  The easiest way to update your blog is to clone your repository, fire up your favorite text editor and run the content locally.  To do this run the <code>jekyll serve</code> command and open a web browser to <a href="http://localhost:4000" class="bare">http://localhost:4000</a>.  Jekyll will automatically process and host changes to the content.</p>
-</div>
-<div class="paragraph">
-<p>You may also edit your content directly on Github.  To do this, navigate the browser the file you wish to edit, click the pensil (edit) button in the upper right hand corner of the view and make your changes.  When you&#8217;re finished, commit your changes.  This will trigger Travis to generate and publish a new website including your changes.</p>
-</div>
-<div class="paragraph">
-<p>For blog posts, Jekyll will recognize files under the <code>_post</code> directory, parse the name and place it in the list of posts.  These will show up under the <code>site.posts</code> variable.</p>
-</div>
-<div class="paragraph">
-<p>To display a list of posts, use Jekyll syntax similar to the following:</p>
-</div>
-<div class="literalblock">
+        <div class="literalblock">
 <div class="content">
-<pre>&lt;a href="./2016/05/10/Security-Notes.html"&gt;&lt;/a&gt;</pre>
+<pre>/2016/05/10/Security-Notes.html[post.shortTitle]</pre>
 </div>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>&lt;a href="./2016/05/10/Keycloak-installation-guide.html"&gt;&lt;/a&gt;</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>&lt;a href="./2015/01/01/first-entry.html"&gt;Entry short title&lt;/a&gt;</pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="update_look_and_feel">Update Look and feel</h4>
-<div class="paragraph">
-<p>The layout provided with the <a href="https://github.com/asciidoctor/jekyll-asciidoc-quickstart">Jekyll-Asciidoc Quickstart</a> project is based on <a href="http://foundation.zurb.com">Foundation</a>, a responsive design css framework.  You&#8217;re free to update the layout by editing the <code>_layouts/default.html</code> file and css under the <code>css</code> directory.</p>
-</div>
-<div class="paragraph">
-<p>This blog layout is based on the <a href="http://foundation.zurb.com/templates/blog.html">Blog template</a>.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="reference_documentation">Reference documentation</h4>
-<div class="paragraph">
-<p>The following links will help with detailed explanations on Jekyll and Asciidoc.</p>
-</div>
-<div class="paragraph">
-<p><a href="http://jekyllrb.com">Jekyll</a><br>
-<a href="http://asciidoctor.org/docs/asciidoc-syntax-quick-reference/">Asciidoc Quick Reference</a><br>
-<a href="http://asciidoctor.org">Asciidoctor</a></p>
-</div>
-</div>
+<pre>/2016/05/10/Keycloak-installation-guide.html[post.shortTitle]</pre>
 </div>
 </div>
 
@@ -126,11 +71,9 @@
         <h4>Posts</h4>
         <ul id="posts" class="posts nav">
             
-            <li><a href="./2016/05/10/Security-Notes.html"></a></li>
+            <li><a href="./2016/05/10/Security-Notes.html">Security Notes</a></li>
             
-            <li><a href="./2016/05/10/Keycloak-installation-guide.html"></a></li>
-            
-            <li><a href="./2015/01/01/first-entry.html">Entry short title</a></li>
+            <li><a href="./2016/05/10/Keycloak-installation-guide.html">Keycloak installation guide</a></li>
             
         </ul>
 
