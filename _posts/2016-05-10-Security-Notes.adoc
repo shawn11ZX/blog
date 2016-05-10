@@ -12,7 +12,7 @@ root: ../../../
 :toc: macro
 :toclevels: 4
 :sectnums:
-:imagesdir:images
+:imagesdir: /images
 :hp-tags: TLS, SSL, MAC
 
 === Security Notes

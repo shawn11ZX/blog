@@ -9,7 +9,10 @@ postsExpanded: false
 = Dizzy Land
 
 {% for post in site.posts limit: 5 %}
-    {{ post.url }}[post.shortTitle]
+
+== post.shortTitle
+    http://shawn11zx.github.io/blog/{{ post.url }}[post.excerpt]
+    link:{{ post.url }}[post.excerpt]
 {% endfor %}
 
 

@@ -13,7 +13,7 @@ root: ../../../
 :toc: macro
 :toclevels: 4
 :sectnums:
-:imagesdir: ../images
+:imagesdir: /images
 
 === Keycloak installation guide
 
