@@ -7,9 +7,9 @@ Rake::Jekyll::GitDeployTask.new(:deploy) do |t|
 
   t.remote_url = -> {
     url = 'https://github.com/shawn11ZX/shawn11zx.github.io.git'
-    next url.gsub(%r{^https://([^/]+)/(.*)$}, 'git@\1:\2') if ssh_key_file?
     next url.gsub(%r{^https://}, "https://#{ENV['GH_TOKEN']}@") if ENV.key? 'GH_TOKEN'
     next url
   }
   
+  t.ssh_key_file = '.deploy_key'
 end
