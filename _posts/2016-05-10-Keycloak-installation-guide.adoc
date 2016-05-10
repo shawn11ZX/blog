@@ -95,7 +95,7 @@ Password: Added 'admin' to '/data/keycloak-1.9.2.Final/standalone/configuration/
   "realm-public-key": "....",
   "auth-server-url": "https://keycloak.example.com:8443/auth",
   "ssl-required": "external",
-  "resource": "4399_ebook_server",
+  "resource": "ebook_server",
   "public-client": true,
   "use-resource-role-mappings": true,
   "disable-trust-manager": true
