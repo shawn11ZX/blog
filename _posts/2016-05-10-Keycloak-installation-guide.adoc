@@ -1,0 +1,99 @@
+
+:hp-tags: keycloak
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: ../images
+
+= Keycloak installation guide
+
+toc::[]
+
+== 安装基本环境(内存数据库 + Self Signed Cert）
+
+* 安装java8
+* 设置JAVA_HOME  
+* 下载keycloak解压  
+* 根据官方文档设置HTTPS https://keycloak.github.io/docs/userguide/keycloak-server/html/server-installation.html#d4e360[3.2.7. SSL/HTTPS Setup]
+**  3.2.7.1.1.1. Self Signed Certificate
+** 3.2.7.1.2. Installing the keystore to WildFly
+
+* 增加admin账号
+
+[source, bash]
+----
+[root@VMcentos ~] # bin/add-user.sh -r master -u admin
+Press ctrl-d (Unix) or ctrl-z (Windows) to exit
+Password: Added 'admin' to '/data/keycloak-1.9.2.Final/standalone/configuration/keycloak-add-user.json', restart server to load user
+----
+
+== MySQL配置
+
+* 下载mysql connect解压获取jar文件  
+
+* 安装mysql-connector, 根据这篇文章:  http://giordanomaestro.blogspot.tw/2015/02/install-jdbc-driver-on-wildfly.html[Install Mysql JDBC Driver on WildFly]
+
+
+* 设置mysql连接vim standalone/configuration/standalone.xml
+
+[source, xml]
+----
+<datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
+    <connection-url>jdbc:mysql://127.0.0.1:3306/keycloak?useUnicode=true&amp;characterEncoding=UTF-8</connection-url>
+    <driver>mysql</driver>
+    <security>
+        <user-name>keycloak</user-name>
+        <password>keycloak1</password>
+    </security>
+</datasource>
+----
+
+
+
+== 设置签名的密钥
+
+* 生成私钥和csr: 
+[source, bash]
+----
+[root@VMcentos ~]  openssl req -newkey rsa:2048 -keyout keycloak.example.com.key -out keycloak.example.com.csr  
+----
+
+* 到StartSSL认证，获得一个OtherServer，里面有：
+** 1_Intermediate.crt  
+** 2_keycloak.example.com.crt  
+
+* 导入keycloak
+
+[source, bash]
+----
+[root@VMcentos ~] 　openssl pkcs12 -export -in 2_keycloak.example.com.crt -inkey ../source/keycloak.example.com.key -certfile 1_Intermediate.crt -name "keycloak.example.com" -out keystore.p12
+
+[root@VMcentos ~]  /opt/jdk8/bin/keytool -importkeystore -srckeystore keystore.p12 -srcstoretype pkcs12 -destkeystore keystore.jks -deststoretype JKS  
+----
+
+== 设置keycloak客户端
+
+在keycloak.json总增加，否则需要导入truststore，有expired time等麻烦
+
+* "disable-trust-manager": true  
+
+[source, json]
+----
+{
+  "realm": "master",
+  "realm-public-key": "....",
+  "auth-server-url": "https://keycloak.example.com:8443/auth",
+  "ssl-required": "external",
+  "resource": "4399_ebook_server",
+  "public-client": true,
+  "use-resource-role-mappings": true,
+  "disable-trust-manager": true
+}
+----
+
+
+== 参考资料
+* https://upload.wikimedia.org/wikipedia/commons/9/96/Usage-of-Digital-Certificate.svg[CA颁发流程]  
+* https://www.sslshopper.com/article-most-common-openssl-commands.html[常见openssl命令]  
+* https://keycloak.github.io/docs/userguide/keycloak-server/html/[keycloak文档]
+* https://keycloak.github.io/docs/userguide/keycloak-server/html/ch08.html#spring-security-adapter[keycloak.json设置]
