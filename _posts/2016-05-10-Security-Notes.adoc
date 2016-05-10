@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Keycloak installation guide
+title: Security Notes
 shortTitle: Security Notes
 documentationExpanded: false
 comments: true

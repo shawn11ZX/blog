@@ -1,12 +1,22 @@
-# jekyll configuration
+# Site settings
+title: Dizzy Land
+email: xxx@gmail.com
+description: > # this means to ignore newlines until "baseurl:"
+  Shawn Zhang's blog
+baseurl: "" # the subpath of your site, e.g. /blog/
+url: "http://127.0.0.1:4000" # the base hostname & protocol for your site
+twitter_username: 
+github_username:  shawn11ZX
 
-title: "DizzyLand"
+# Build settings
+markdown: kramdown
 
-asciidoctor:
-  attributes:
-    - idseparator=_
-    - source-highlighter=coderay
-    - icons=font
+# Other options
+permalink: blog/:year/:month/:title
+job.title: "Assistant Professor"
+excerpt_separator: "<!--more-->"
 
-url: "http://127.0.0.1:4000"
-# end of configuration
+# SEO stuff
+# google_author: ""
+# google_site_verification: ""
+# bing_webmastertools_id: ""
