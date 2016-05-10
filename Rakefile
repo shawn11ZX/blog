@@ -8,7 +8,7 @@ Rake::Jekyll::GitDeployTask.new(:deploy) do |t|
   t.deploy_branch = -> { 
     'master'
   }
-  
+   
   t.remote_url = -> {
     url = 'https://github.com/shawn11ZX/shawn11zx.github.io.git'
     next url.gsub(%r{^https://}, "https://#{ENV['GH_TOKEN']}@") if ENV.key? 'GH_TOKEN'
