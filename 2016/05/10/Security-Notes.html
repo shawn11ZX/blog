@@ -5,7 +5,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Jekyll-Asciidoc Quickstart</title>
+    <title>Keycloak installation guide</title>
 
 
     <meta name="description"
@@ -32,7 +32,7 @@
         <li class="name">
             <h1>
                 <a href="../../../">
-                    Jekyll-Asciidoc Quickstart
+                    HOME
                 </a>
             </h1>
         </li>
@@ -45,32 +45,31 @@
 <!-- Main Page Content and Sidebar -->
 
 <div class="row">
-
+	
     <!-- Main Blog Content -->
     <div class="large-9 columns" role="content">
-
-        <div class="sect2">
-<h3 id="security_notes">1. Security Notes</h3>
+		<h2>Keycloak installation guide</h2>
+		
+        <div id="preamble">
+<div class="sectionbody">
 <div id="toc" class="toc">
 <div id="toctitle" class="title">Table of Contents</div>
-<ul class="sectlevel2">
-<li><a href="#security_notes">1. Security Notes</a>
 <ul class="sectlevel3">
-<li><a href="#重要的定义">1.1. 重要的定义</a></li>
-<li><a href="#密码学">1.2. 密码学</a>
+<li><a href="#重要的定义">1. 重要的定义</a></li>
+<li><a href="#密码学">2. 密码学</a>
 <ul class="sectlevel4">
 <li><a href="#特点">特点</a></li>
 <li><a href="#应用">应用</a></li>
 </ul>
 </li>
-<li><a href="#对称加密">1.3. 对称加密</a>
+<li><a href="#对称加密">3. 对称加密</a>
 <ul class="sectlevel4">
 <li><a href="#特点_2">特点</a></li>
 <li><a href="#常见的算法">常见的算法</a></li>
 <li><a href="#流程">流程</a></li>
 </ul>
 </li>
-<li><a href="#非对称加密">1.4. 非对称加密</a>
+<li><a href="#非对称加密">4. 非对称加密</a>
 <ul class="sectlevel4">
 <li><a href="#特点_3">特点</a></li>
 <li><a href="#常见算法">常见算法</a></li>
@@ -78,29 +77,29 @@
 <li><a href="#认证public_key">认证public key</a></li>
 </ul>
 </li>
-<li><a href="#hash">1.5. Hash</a>
+<li><a href="#hash">5. Hash</a>
 <ul class="sectlevel4">
 <li><a href="#常见算法_2">常见算法</a></li>
 <li><a href="#流程_3">流程</a></li>
 </ul>
 </li>
-<li><a href="#mac">1.6. MAC</a>
+<li><a href="#mac">6. MAC</a>
 <ul class="sectlevel4">
 <li><a href="#流程_4">流程</a></li>
 </ul>
 </li>
-<li><a href="#digital_signature">1.7. Digital Signature</a>
+<li><a href="#digital_signature">7. Digital Signature</a>
 <ul class="sectlevel4">
 <li><a href="#常见算法_3">常见算法</a></li>
 <li><a href="#流程_5">流程</a></li>
 </ul>
 </li>
 </ul>
-</li>
-</ul>
+</div>
+</div>
 </div>
 <div class="sect3">
-<h4 id="重要的定义">1.1. 重要的定义</h4>
+<h4 id="重要的定义">1. 重要的定义</h4>
 <div class="ulist">
 <ul>
 <li>
@@ -137,7 +136,7 @@
 </div>
 </div>
 <div class="sect3">
-<h4 id="密码学">1.2. 密码学</h4>
+<h4 id="密码学">2. 密码学</h4>
 <div class="sect4">
 <h5 id="特点">特点</h5>
 <div class="ulist">
@@ -172,7 +171,7 @@
 </div>
 </div>
 <div class="sect3">
-<h4 id="对称加密">1.3. 对称加密</h4>
+<h4 id="对称加密">3. 对称加密</h4>
 <div class="sect4">
 <h5 id="特点_2">特点</h5>
 <div class="ulist">
@@ -225,7 +224,7 @@ though attacks not yet proven or published)</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="非对称加密">1.4. 非对称加密</h4>
+<h4 id="非对称加密">4. 非对称加密</h4>
 <div class="sect4">
 <h5 id="特点_3">特点</h5>
 <div class="ulist">
@@ -275,7 +274,7 @@ systems, nonsecret encryption, 使用一对key: a public and a private key</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="hash">1.5. Hash</h4>
+<h4 id="hash">5. Hash</h4>
 <div class="ulist">
 <ul>
 <li>
@@ -312,7 +311,7 @@ systems, nonsecret encryption, 使用一对key: a public and a private key</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="mac">1.6. MAC</h4>
+<h4 id="mac">6. MAC</h4>
 <div class="ulist">
 <ul>
 <li>
@@ -349,7 +348,7 @@ systems, nonsecret encryption, 使用一对key: a public and a private key</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="digital_signature">1.7. Digital Signature</h4>
+<h4 id="digital_signature">7. Digital Signature</h4>
 <div class="ulist">
 <ul>
 <li>
@@ -394,7 +393,6 @@ systems, nonsecret encryption, 使用一对key: a public and a private key</p>
 </div>
 </div>
 </div>
-</div>
 
     </div>
 
@@ -407,17 +405,16 @@ systems, nonsecret encryption, 使用一对key: a public and a private key</p>
         <h4>Posts</h4>
         <ul id="posts" class="posts nav">
             
-            <li><a href="./2016/05/10/Security-Notes.html">Security Notes</a></li>
+            <li><a href="/2016/05/10/Security-Notes.html">Security Notes</a></li>
             
-            <li><a href="./2016/05/10/Keycloak-installation-guide.html">Keycloak installation guide</a></li>
+            <li><a href="/2016/05/10/Keycloak-installation-guide.html">Keycloak installation guide</a></li>
             
         </ul>
 
         <div class="panel">
             <h5>Featured</h5>
 
-            <p>Pork drumstick turkey fugiat. Tri-tip elit turducken pork chop in. Swine short ribs meatball irure bacon
-                nulla pork belly cupidatat meatloaf cow.</p>
+            <p>Nothing...</p>
         </div>
 
     </aside>
