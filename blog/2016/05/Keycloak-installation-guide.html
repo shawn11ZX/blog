@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Keycloak installation guide</title>
+  <meta name="description" content="1. Keycloak installation guideTable of Contents1. Keycloak installation guide1.1. 安装基本环境(内存数据库 + Self Signed Cert）1.2. MySQL配置1.3. 设置签名的密钥1.4. 设置keycloak客户端1...">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://127.0.0.1:4000/blog/2016/05/Keycloak-installation-guide">
+  <link rel="alternate" type="application/rss+xml" title="Dizzy Land" href="http://127.0.0.1:4000/feed.xml" />
+<link rel='stylesheet' id='open-sans-css'  href='//fonts.googleapis.com/css?family=Open+Sans%3A300italic%2C400italic%2C600italic%2C300%2C400%2C600&#038;subset=latin%2Clatin-ext&#038;ver=4.2.4' type='text/css' media='all' />
+<link href='http://fonts.googleapis.com/css?family=Titillium+Web:600italic,600,400,400italic' rel='stylesheet' type='text/css'>
+
+
+
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">Dizzy Land</a>
+
+
+    <nav class="site-nav">
+
+      <a href="#" class="menu-icon menu.open">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>  
+
+    <div class="trigger"><h1>Main Navigation</h1>
+
+ <ul class="menu">
+
+    
+    
+     <li><a href="/about/" class="page-link">About</a>
+    
+    </li>
+    
+    
+     <li><a href="/blog/" class="page-link">Blog</a>
+    
+    </li>
+    
+    
+     <li><a href="/cv/" class="page-link">CV</a>
+    
+    </li>
+    
+    
+    <li><a href="/miscellany/" class="page-link">Miscellany</a>
+    <ul class="sub-menu">
+    
+    <li><a href="/miscellany/item-1/">Item 1</a></li>
+    
+    <li><a href="/miscellany/item-2/">Item 2</a></li>
+    
+    </ul>
+    
+    </li>
+    
+    </ul>
+
+
+<!-- <ul class="menu">
+        <li> <a class="page-link" href="/about">About</a></li>
+        <li> <a class="page-link"  href="/blog">Blog</a>
+        <li> <a class="page-link" href="/blog">CV</a>
+        <li> <a class="page-link" href="/blog">For Students</a></li>
+        <li> <a class="page-link"  href="/blog">Research</a></a>
+        <li> <a class="page-link" href="/blog">Teaching</a>
+<ul class="sub-menu">
+	<li><a href="http://svmiller.com/teaching/posc-1020-introduction-to-international-relations/">POSC 1020 – Introduction to International Relations</a></li>
+	<li><a href="http://svmiller.com/teaching/posc-3410-quantitative-methods-in-political-science/">POSC 3410 – Quantitative Methods in Political Science</a></li>
+	<li><a href="http://svmiller.com/teaching/posc-3610-international-politics-in-crisis/">POSC 3610 – International Politics in Crisis</a></li>
+	<li><a href="http://svmiller.com/teaching/posc-3630-united-states-foreign-policy/">POSC 3630 – United States Foreign Policy</a></li>
+</ul></li>
+        <li> <a class="page-link" href="/blog">Miscellany</a>
+<ul class="sub-menu">
+	<li><a href="http://svmiller.com/teaching/posc-1020-introduction-to-international-relations/">Clean USAID Greenbook Data</a></li>
+	<li><a href="http://svmiller.com/teaching/posc-3410-quantitative-methods-in-political-science/">Journal of Peace Research *.bst File</a></li>
+	<li><a href="http://svmiller.com/teaching/posc-3610-international-politics-in-crisis/">My Custom Beamer Style</a></li>
+</ul> 
+
+</li>
+</ul> -->
+
+     </div>  
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="sect2">
+<h3 id="keycloak-installation-guide">1. Keycloak installation guide</h3>
+<div id="toc" class="toc">
+<div id="toctitle" class="title">Table of Contents</div>
+<ul class="sectlevel2">
+<li><a href="#keycloak-installation-guide">1. Keycloak installation guide</a>
+<ul class="sectlevel3">
+<li><a href="#安装基本环境-内存数据库-self-signed-cert">1.1. 安装基本环境(内存数据库 + Self Signed Cert）</a></li>
+<li><a href="#mysql配置">1.2. MySQL配置</a></li>
+<li><a href="#设置签名的密钥">1.3. 设置签名的密钥</a></li>
+<li><a href="#设置keycloak客户端">1.4. 设置keycloak客户端</a></li>
+<li><a href="#参考资料">1.5. 参考资料</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="安装基本环境-内存数据库-self-signed-cert">1.1. 安装基本环境(内存数据库 + Self Signed Cert）</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>安装java8</p>
+</li>
+<li>
+<p>设置JAVA_HOME</p>
+</li>
+<li>
+<p>下载keycloak解压</p>
+</li>
+<li>
+<p>根据官方文档设置HTTPS <a href="https://keycloak.github.io/docs/userguide/keycloak-server/html/server-installation.html#d4e360">3.2.7. SSL/HTTPS Setup</a></p>
+<div class="ulist">
+<ul>
+<li>
+<p>3.2.7.1.1.1. Self Signed Certificate</p>
+</li>
+<li>
+<p>3.2.7.1.2. Installing the keystore to WildFly</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>增加admin账号</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">[root@VMcentos ~] # bin/add-user.sh -r master -u admin
+Press ctrl-d (Unix) or ctrl-z (Windows) to exit
+Password: Added 'admin' to '/data/keycloak-1.9.2.Final/standalone/configuration/keycloak-add-user.json', restart server to load user</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="mysql配置">1.2. MySQL配置</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>下载mysql connect解压获取jar文件</p>
+</li>
+<li>
+<p>安装mysql-connector, 根据这篇文章:  <a href="http://giordanomaestro.blogspot.tw/2015/02/install-jdbc-driver-on-wildfly.html">Install Mysql JDBC Driver on WildFly</a></p>
+</li>
+<li>
+<p>设置mysql连接vim standalone/configuration/standalone.xml</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true"&gt;
+    &lt;connection-url&gt;jdbc:mysql://127.0.0.1:3306/keycloak?useUnicode=true&amp;amp;characterEncoding=UTF-8&lt;/connection-url&gt;
+    &lt;driver&gt;mysql&lt;/driver&gt;
+    &lt;security&gt;
+        &lt;user-name&gt;keycloak&lt;/user-name&gt;
+        &lt;password&gt;keycloak1&lt;/password&gt;
+    &lt;/security&gt;
+&lt;/datasource&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="设置签名的密钥">1.3. 设置签名的密钥</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>生成私钥和csr:</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>[root@VMcentos ~]  openssl req -newkey rsa:2048 -keyout keycloak.example.com.key -out keycloak.example.com.csr</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>到StartSSL认证，获得一个OtherServer，里面有：</p>
+<div class="ulist">
+<ul>
+<li>
+<p>1_Intermediate.crt</p>
+</li>
+<li>
+<p>2_keycloak.example.com.crt</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>导入keycloak</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">[root@VMcentos ~] 　openssl pkcs12 -export -in 2_keycloak.example.com.crt -inkey ../source/keycloak.example.com.key -certfile 1_Intermediate.crt -name "keycloak.example.com" -out keystore.p12
+
+[root@VMcentos ~]  /opt/jdk8/bin/keytool -importkeystore -srckeystore keystore.p12 -srcstoretype pkcs12 -destkeystore keystore.jks -deststoretype JKS</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="设置keycloak客户端">1.4. 设置keycloak客户端</h4>
+<div class="paragraph">
+<p>在keycloak.json总增加，否则需要导入truststore，有expired time等麻烦</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>"disable-trust-manager": true</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "realm": "master",
+  "realm-public-key": "....",
+  "auth-server-url": "https://keycloak.example.com:8443/auth",
+  "ssl-required": "external",
+  "resource": "4399_ebook_server",
+  "public-client": true,
+  "use-resource-role-mappings": true,
+  "disable-trust-manager": true
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="参考资料">1.5. 参考资料</h4>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://upload.wikimedia.org/wikipedia/commons/9/96/Usage-of-Digital-Certificate.svg">CA颁发流程</a></p>
+</li>
+<li>
+<p><a href="https://www.sslshopper.com/article-most-common-openssl-commands.html">常见openssl命令</a></p>
+</li>
+<li>
+<p><a href="https://keycloak.github.io/docs/userguide/keycloak-server/html/">keycloak文档</a></p>
+</li>
+<li>
+<p><a href="https://keycloak.github.io/docs/userguide/keycloak-server/html/ch08.html#spring-security-adapter">keycloak.json设置</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+<!--     <h2 class="footer-heading">Dizzy Land</h2> -->
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col  footer-col-1">
+        <ul class="contact-list">
+          <li><strong>Dizzy Land</strong></li>
+
+          <li><a href="mailto:xxx@gmail.com">xxx@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/shawn11ZX">
+              <span class="icon  icon--github">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+                </svg>
+              </span>
+
+              <span class="username">shawn11ZX</span>
+            </a>
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-3">
+         <p class="text">
+Shawn Zhang's blog
+ 
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+  </body>
+
+</html>
