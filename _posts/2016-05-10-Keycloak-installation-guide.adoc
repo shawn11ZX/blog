@@ -1,12 +1,13 @@
 ---
 layout: default
-title: Jekyll-Asciidoc Quickstart
+title: Keycloak installation guide
 shortTitle: Keycloak installation guide
 documentationExpanded: false
 comments: true
 postsExpanded: true
-excerpt: excerpt
 root: ../../../
+excerpt_separator: <!--more-->
+
 ---
 
 :hp-tags: keycloak

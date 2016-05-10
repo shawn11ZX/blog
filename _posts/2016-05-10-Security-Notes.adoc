@@ -1,11 +1,10 @@
 ---
 layout: default
-title: Jekyll-Asciidoc Quickstart
+title: Keycloak installation guide
 shortTitle: Security Notes
 documentationExpanded: false
 comments: true
 postsExpanded: true
-excerpt: excerpt
 root: ../../../
 ---
 
@@ -15,7 +14,7 @@ root: ../../../
 :imagesdir: /images
 :hp-tags: TLS, SSL, MAC
 
-=== Security Notes
+= Security Notes
 
 toc::[]
 

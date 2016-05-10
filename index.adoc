@@ -1,18 +1,17 @@
 ---
 layout: default
-title: Jekyll-Asciidoc Quickstart
-description: A forkable blog-ready Jekyll site using Asciidoc
-documentationExpanded: false
-postsExpanded: false
+title: Dizzy Land
+description: Dizzy Land
+documentationExpanded: true
+postsExpanded: true
 ---
 
 = Dizzy Land
 
 {% for post in site.posts limit: 5 %}
 
-== post.shortTitle
-    http://shawn11zx.github.io/blog/{{ post.url }}[post.excerpt]
-    link:{{ post.url }}[post.excerpt]
+== {{ site.url}}{{ post.url }}[{{ post.shortTitle }}]
+
 {% endfor %}
 
 

@@ -8,4 +8,5 @@ asciidoctor:
     - source-highlighter=coderay
     - icons=font
 
+url: "http://127.0.0.1:4000"
 # end of configuration
