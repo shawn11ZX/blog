@@ -1,0 +1,179 @@
+<div id="preamble">
+<div class="sectionbody">
+<div id="toc" class="toc">
+<div id="toctitle" class="title">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#安装基本环境_内存数据库_self_signed_cert">1. 安装基本环境(内存数据库 + Self Signed Cert）</a></li>
+<li><a href="#mysql配置">2. MySQL配置</a></li>
+<li><a href="#设置签名的密钥">3. 设置签名的密钥</a></li>
+<li><a href="#设置keycloak客户端">4. 设置keycloak客户端</a></li>
+<li><a href="#参考资料">5. 参考资料</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="安装基本环境_内存数据库_self_signed_cert">1. 安装基本环境(内存数据库 + Self Signed Cert）</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>安装java8</p>
+</li>
+<li>
+<p>设置JAVA_HOME</p>
+</li>
+<li>
+<p>下载keycloak解压</p>
+</li>
+<li>
+<p>根据官方文档设置HTTPS <a href="https://keycloak.github.io/docs/userguide/keycloak-server/html/server-installation.html#d4e360">3.2.7. SSL/HTTPS Setup</a></p>
+<div class="ulist">
+<ul>
+<li>
+<p>3.2.7.1.1.1. Self Signed Certificate</p>
+</li>
+<li>
+<p>3.2.7.1.2. Installing the keystore to WildFly</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>增加admin账号</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="bash">[root@VMcentos ~] # bin/add-user.sh -r master -u admin
+Press ctrl-d (Unix) or ctrl-z (Windows) to exit
+Password: Added 'admin' to '/data/keycloak-1.9.2.Final/standalone/configuration/keycloak-add-user.json', restart server to load user</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="mysql配置">2. MySQL配置</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>下载mysql connect解压获取jar文件</p>
+</li>
+<li>
+<p>安装mysql-connector, 根据这篇文章:  <a href="http://giordanomaestro.blogspot.tw/2015/02/install-jdbc-driver-on-wildfly.html">Install Mysql JDBC Driver on WildFly</a></p>
+</li>
+<li>
+<p>设置mysql连接vim standalone/configuration/standalone.xml</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;datasource</span> <span class="attribute-name">jndi-name</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">java:jboss/datasources/KeycloakDS</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">pool-name</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">KeycloakDS</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">enabled</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">true</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">use-java-context</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">true</span><span class="delimiter">&quot;</span></span><span class="tag">&gt;</span>
+    <span class="tag">&lt;connection-url&gt;</span>jdbc:mysql://127.0.0.1:3306/keycloak?useUnicode=true<span class="entity">&amp;amp;</span>characterEncoding=UTF-8<span class="tag">&lt;/connection-url&gt;</span>
+    <span class="tag">&lt;driver&gt;</span>mysql<span class="tag">&lt;/driver&gt;</span>
+    <span class="tag">&lt;security&gt;</span>
+        <span class="tag">&lt;user-name&gt;</span>keycloak<span class="tag">&lt;/user-name&gt;</span>
+        <span class="tag">&lt;password&gt;</span>keycloak1<span class="tag">&lt;/password&gt;</span>
+    <span class="tag">&lt;/security&gt;</span>
+<span class="tag">&lt;/datasource&gt;</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="设置签名的密钥">3. 设置签名的密钥</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>生成私钥和csr:</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>[root@VMcentos ~]  openssl req -newkey rsa:2048 -keyout keycloak.example.com.key -out keycloak.example.com.csr</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>到StartSSL认证，获得一个OtherServer，里面有：</p>
+<div class="ulist">
+<ul>
+<li>
+<p>1_Intermediate.crt</p>
+</li>
+<li>
+<p>2_keycloak.example.com.crt</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>导入keycloak</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="bash">[root@VMcentos ~] 　openssl pkcs12 -export -in 2_keycloak.example.com.crt -inkey ../source/keycloak.example.com.key -certfile 1_Intermediate.crt -name &quot;keycloak.example.com&quot; -out keystore.p12
+
+[root@VMcentos ~]  /opt/jdk8/bin/keytool -importkeystore -srckeystore keystore.p12 -srcstoretype pkcs12 -destkeystore keystore.jks -deststoretype JKS</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="设置keycloak客户端">4. 设置keycloak客户端</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>在keycloak.json总增加，否则需要导入truststore，有expired time等麻烦</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>"disable-trust-manager": true</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="json">{
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">realm</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">master</span><span class="delimiter">&quot;</span></span>,
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">realm-public-key</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">....</span><span class="delimiter">&quot;</span></span>,
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">auth-server-url</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">https://keycloak.example.com:8443/auth</span><span class="delimiter">&quot;</span></span>,
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">ssl-required</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">external</span><span class="delimiter">&quot;</span></span>,
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">resource</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">4399_ebook_server</span><span class="delimiter">&quot;</span></span>,
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">public-client</span><span class="delimiter">&quot;</span></span>: <span class="value">true</span>,
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">use-resource-role-mappings</span><span class="delimiter">&quot;</span></span>: <span class="value">true</span>,
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">disable-trust-manager</span><span class="delimiter">&quot;</span></span>: <span class="value">true</span>
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="参考资料">5. 参考资料</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://upload.wikimedia.org/wikipedia/commons/9/96/Usage-of-Digital-Certificate.svg">CA颁发流程</a></p>
+</li>
+<li>
+<p><a href="https://www.sslshopper.com/article-most-common-openssl-commands.html">常见openssl命令</a></p>
+</li>
+<li>
+<p><a href="https://keycloak.github.io/docs/userguide/keycloak-server/html/">keycloak文档</a></p>
+</li>
+<li>
+<p><a href="https://keycloak.github.io/docs/userguide/keycloak-server/html/ch08.html#spring-security-adapter">keycloak.json设置</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
