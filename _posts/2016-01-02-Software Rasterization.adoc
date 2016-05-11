@@ -8,8 +8,11 @@ postsExpanded: true
 root: ../../../
 ---
 
-http://shawn11zx.github.io/softRasterization/[Demo]
+* Source Code: https://github.com/shawn11ZX/softRasterization/[https://github.com/shawn11ZX/softRasterization/]
 
-* Rotate: WSAD
-* Zoom: mouse scroll
+* Demo: http://shawn11zx.github.io/softRasterization/[http://shawn11zx.github.io/softRasterization/]
+
+* Control
+** Rotate: WSAD
+** Zoom: mouse scroll
 
