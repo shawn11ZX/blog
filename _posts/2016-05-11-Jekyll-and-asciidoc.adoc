@@ -50,7 +50,7 @@ toc::[]
 * 设置ruby镜像
 [source,bash]
 ----
-gem sources --add http://gems.ruby-china.org/[http://gems.ruby-china.org/] --remove https://ru/[https://ru]bygems.org/
+gem sources --add http://gems.ruby-china.org/ --remove https://rubygems.org/
 ----
 
 * 安装ruby bundler
