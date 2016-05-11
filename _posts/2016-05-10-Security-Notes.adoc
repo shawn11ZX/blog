@@ -100,6 +100,15 @@ A Public Key Infrastructure (PKI), trusted third party (CA).
 * SHA­1
 * SHA­2 family: SHA­224, SHA­256, SHA­384 and SHA­512  
 
+.性能比较 Execution time in seconds ( (http://atodorov.org/blog/2013/02/05/performance-test-md5-sha1-sha256-sha512/)[参考] )
+[width="100%",options="footer"]
+|====================
+|MD5     |10.275190830230713| 10.155328989028931| 10.250311136245728
+|SHA1    |11.985718965530396| 11.976419925689697| 11.86873197555542
+|SHA256  |16.662450075149536| 21.551337003707886| 17.016510963439941
+|SHA512  |18.339390993118286| 18.11187481880188 |  18.085782051086426
+|====================
+
 ===== 流程
 
 image::Message-Digest.png[]
