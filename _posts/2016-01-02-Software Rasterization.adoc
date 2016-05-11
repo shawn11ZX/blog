@@ -1,0 +1,15 @@
+---
+layout: post
+title: Software Rasterization
+shortTitle: Software Rasterization
+documentationExpanded: false
+comments: true
+postsExpanded: true
+root: ../../../
+---
+
+http://shawn11zx.github.io/softRasterization/[Demo]
+
+* Rotate: WSAD
+* Zoom: mouse scroll
+
