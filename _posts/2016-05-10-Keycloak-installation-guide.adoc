@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: post
 title: Keycloak installation guide
 shortTitle: Keycloak installation guide
 documentationExpanded: false
@@ -16,11 +16,11 @@ excerpt_separator: <!--more-->
 :sectnums:
 :imagesdir: /images
 
-=== Keycloak installation guide
+= Keycloak installation guide
 
 toc::[]
 
-==== 安装基本环境(内存数据库 + Self Signed Cert）
+== 安装基本环境(内存数据库 + Self Signed Cert）
 
 * 安装java8
 * 设置JAVA_HOME  
@@ -38,7 +38,7 @@ Press ctrl-d (Unix) or ctrl-z (Windows) to exit
 Password: Added 'admin' to '/data/keycloak-1.9.2.Final/standalone/configuration/keycloak-add-user.json', restart server to load user
 ----
 
-==== MySQL配置
+== MySQL配置
 
 * 下载mysql connect解压获取jar文件  
 
@@ -61,7 +61,7 @@ Password: Added 'admin' to '/data/keycloak-1.9.2.Final/standalone/configuration/
 
 
 
-==== 设置签名的密钥
+== 设置签名的密钥
 
 * 生成私钥和csr: 
 [source, bash]
@@ -82,7 +82,7 @@ Password: Added 'admin' to '/data/keycloak-1.9.2.Final/standalone/configuration/
 [root@VMcentos ~]  /opt/jdk8/bin/keytool -importkeystore -srckeystore keystore.p12 -srcstoretype pkcs12 -destkeystore keystore.jks -deststoretype JKS  
 ----
 
-==== 设置keycloak客户端
+== 设置keycloak客户端
 
 在keycloak.json总增加，否则需要导入truststore，有expired time等麻烦
 
@@ -103,7 +103,7 @@ Password: Added 'admin' to '/data/keycloak-1.9.2.Final/standalone/configuration/
 ----
 
 
-==== 参考资料
+== 参考资料
 * https://upload.wikimedia.org/wikipedia/commons/9/96/Usage-of-Digital-Certificate.svg[CA颁发流程]  
 * https://www.sslshopper.com/article-most-common-openssl-commands.html[常见openssl命令]  
 * https://keycloak.github.io/docs/userguide/keycloak-server/html/[keycloak文档]

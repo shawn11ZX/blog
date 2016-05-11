@@ -1,0 +1,156 @@
+---
+layout: post
+title: Jekyll+Asciidoc installation
+shortTitle: Jekyll+Asciidoc installation
+documentationExpanded: false
+comments: true
+postsExpanded: true
+root: ../../../
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: TLS, SSL, MAC
+
+= Jekyll Asciidoc installation
+
+
+toc::[]
+
+== 背景
+
+* Jekyll(后面两个小写的L)，用来将plain text的文档转换成静态的HTML的websites和blog
+* Jekyll目前支持的Mark语言有Makrdown和Textile，不支持Asciidoc，但是可以通过插件的方式增加
+* jekyll-asciidoc插件能让Jekyll支持Asciidoc
+* Github支持展示静态html页面，但是不支持直接执行Jekyll进行转换
+* Travis能监控Github提交，执行CI
+
+=== Github page
+
+* repo名字为username.github.io的proj将作为默认的主页
+** 地址为http://username.github.io
+** Github读取其master分支
+
+* 其他repo也有项目页面
+** 地址为http://username.github.io/projname
+** Github读取其gh-pages分支
+
+== 设计
+
+* 增加一个blog-src工程，存放源代码
+* 增加一个shawn11zx.github.io工程，存放生成的HTML
+* 增加一个travis项目，自动编译blog-src，并push到shawn11zx.github.io
+
+== 实现
+
+=== 设置本地环境
+* 安装ruby 2.x
+* 设置ruby镜像
+[source,bash]
+----
+gem sources --add http://gems.ruby-china.org/[http://gems.ruby-china.org/] --remove https://ru/[https://ru]bygems.org/
+----
+
+* 安装ruby bundler
+[source,bash]
+----
+gem install bundler
+----
+
+* 设置ruby bundler镜像
+[source,bash]
+----
+bundle config mirror.https://rubygems.org http://gems.ruby-china.org
+----
+
+=== 设置项目
+
+* 生成Jekyll目录结构（或者从jekyllthemes.org下载一个，如 http://jekyllthemes.org/themes/svm-ngvb/[Steve's NGVB Theme])
+[source,bash]
+----
+jekyll new blog-src
+----
+
+* 在blog-src目录创建并编辑Gemfile（用于本地和CI执行jekyll时下载依赖项目）
+
+[source,ruby]
+----
+source 'https://rubygems.org'
+
+gem 'jekyll', '~> 3.1.0'
+gem 'asciidoctor', '~> 1.5.0'
+gem 'coderay', '~> 1.1.0'
+gem 'rake-jekyll', '~> 1.1.0'
+
+group :jekyll_plugins do
+  gem "jekyll-asciidoc", '~> 1.0.0'
+end
+
+----
+
+* 执行jerky serve实现WYSIWYG
+[source,bash]
+----
+cd blog-src
+jekyll serve
+----
+
+* 向_posts目录增加Asciidoc格式的blog
+
+=== 部署Travis
+
+
+* 创建Travis项目和生成加密的Token
+参考：https://github.com/asciidoctor/jekyll-asciidoc-quickstart
+
+* 创建.travis.yml文件，告诉Travis这是个ruby项目
+[source,yml]
+----
+language: ruby
+rvm:
+- 2.2.0
+sudo: false
+script: bundle exec rake deploy
+env:
+  global:
+    secure: ....
+
+----
+
+* 创建Rakefile（用于Travis执行编译步骤）
+
+该Rakefile通过rake-jekyll编译src repo，并push到目标repo
+
+[source,ruby]
+----
+require 'rake-jekyll'
+
+# This task builds the Jekyll site and deploys it to a remote Git repository.
+# It's preconfigured to be used with GitHub and Travis CI.
+# See http://github.com/jirutka/rake-jekyll for more options.
+Rake::Jekyll::GitDeployTask.new(:deploy) do |t|
+
+  t.deploy_branch = -> { 
+    'master'
+  }
+   
+  t.remote_url = -> {
+    url = 'https://github.com/shawn11ZX/shawn11zx.github.io.git'
+    next url.gsub(%r{^https://}, "https://#{ENV['GH_TOKEN']}@") if ENV.key? 'GH_TOKEN'
+    next url
+  }
+  
+  t.ssh_key_file = '.deploy_key'
+end
+----
+
+
+== 参考
+* https://github.com/asciidoctor/jekyll-asciidoc[Jekyll-asciidoc]
+* https://jekyllrb.com/[Jekyll]
+* https://pages.github.com/[Github page]
+* http://github.com/jirutka/rake-jekyll[rake jekyll]
+* https://github.com/asciidoctor/jekyll-asciidoc-quickstart[jekyll-asccidoc-quickstart]
+* http://jekyllthemes.org/themes/svm-ngvb/[Steve's NGVB Theme]
