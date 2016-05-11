@@ -57,6 +57,7 @@ gem sources --add http://gems.ruby-china.org/ --remove https://rubygems.org/
 [source,bash]
 ----
 gem install bundler
+gem install travis
 ----
 
 * 设置ruby bundler镜像
@@ -64,6 +65,8 @@ gem install bundler
 ----
 bundle config mirror.https://rubygems.org http://gems.ruby-china.org
 ----
+
+
 
 === 设置项目
 
@@ -102,8 +105,16 @@ jekyll serve
 === 部署Travis
 
 
-* 创建Travis项目和生成加密的Token
-参考：https://github.com/asciidoctor/jekyll-asciidoc-quickstart
+* 创建Travis项目和生成加密的Token https://github.com/asciidoctor/jekyll-asciidoc-quickstart[参考]
+** 到github生成key
+** 到github创建repo
+** clone repo到本地
+** 到repo目录执行
+
+[source,bash]
+----
+travis encrypt -r user/repo GITHUB_TOKEN=[the token here]
+----
 
 * 创建.travis.yml文件，告诉Travis这是个ruby项目
 [source,yml]
