@@ -22,6 +22,7 @@ image::keycloak.png[]
 
 == Application -> Browser : redirect to Keycloak login page
 
+* Application会先跳到自己的/sso/login URL，这个URL会生成一个state
 
 == Browser -> Keycloak: request login page
 
@@ -108,14 +109,19 @@ client_session_host=ww-20150310
 
 其中的access_token，可以解开为(包含了group信息)：
 
+.HEAD
 [source,json]
 ----
-HEAD
+
 {
   "alg": "RS256"
 }
+----
 
-PAYLOAD
+.PAYLOAD
+[source,json]
+----
+
 {
   "jti": "4988c185-1366-4865-80ae-d9af90ea9673",
   "exp": 1462521226,
@@ -154,14 +160,17 @@ PAYLOAD
 
 其中的refresh_token，可以解开为：
 
+.HEAD
 [source,json]
 ----
-HEAD
 {
   "alg": "RS256"
 }
+----
 
-PAYLOAD
+.PAYLOAD
+[source,json]
+----
 {
   "jti": "dfa4851a-557f-4e6e-bea8-f3d694084bd1",
   "exp": 1462522426,
@@ -197,14 +206,17 @@ PAYLOAD
 
 其中的id_token，可以解开为：
 
+.HEAD
 [source,json]
 ----
-HEAD
 {
   "alg": "RS256"
 }
+----
 
-PAYLOAD
+.PAYLOAD
+[source,json]
+----
 {
   "jti": "67a595fc-86bf-4118-85ec-522edc83a7ad",
   "exp": 1462521226,
