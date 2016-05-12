@@ -1,0 +1,225 @@
+---
+layout: post
+title: Keycloak Authentication Flow
+shortTitle: Keycloak Authentication Flow
+documentationExpanded: false
+comments: true
+postsExpanded: true
+root: ../../../
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: Keycloak
+
+= Keycloak  Authenciaton Flow 
+
+image::keycloak.png[]
+
+== Browser -> Application: request protected url
+
+== Application -> Browser : redirect to Keycloak login page
+
+
+== Browser -> Keycloak: request login page
+
+[source,http]
+----
+GET /auth/realms/master/protocol/openid-connect/auth?response_type=code&client_id=ebook_server&redirect_uri=http://127.0.0.1:8081/sso/login&state=0/73737f0c-a2ba-4caf-aebe-76003f6eb5bc&login=true HTTP/1.1
+----
+.URL参数
+* response_type: code，即为了获取authentication code
+* client_id: ebook_server
+* redirect_uri: http://127.0.0.1:8081/sso/login
+* state: 0/73737f0c-a2ba-4caf-aebe-76003f6eb5bc&login=true
+
+其中的state是application生成的
+
+== Keycloak -> Browser: login page
+
+[source,http]
+----
+<form id="kc-form-login" class="form-horizontal" action="http://keycloak.wan5d.com:9080/auth/realms/master/login-actions/authenticate?code=TC1V8v0eFI7HBXy7nODYUlsQ76esBNH3F6V89Cn2VuQ.85ee6038-e2c0-48d3-847a-8708b72d6c6e&execution=774b7f8c-9f41-4c23-950c-a911167795e8"
+method="post">
+    <input id="username" class="form-control" name="username" value="" type="text" autofocus />
+    <input id="password" class="form-control" name="password" type="password" autocomplete="off" />
+    <input class="btn btn-primary btn-lg" name="login" id="kc-login" type="submit" value="Log in" />
+</form>
+----
+.FORM的action URL包含
+* code: TC1V8v0eFI7HBXy7nODYUlsQ76esBNH3F6V89Cn2VuQ.85ee6038-e2c0-48d3-847a-8708b72d6c6e，就是认证成功后的authentication code，可以看出一早就生成了，但是在用户名密码完成后，keycloak才把这个code和特定用户关联
+* execution，不知道干啥用
+
+== Browser -> Keycloak: login
+[source,http]
+----
+POST /auth/realms/master/login-actions/authenticate?code=TC1V8v0eFI7HBXy7nODYUlsQ76esBNH3F6V89Cn2VuQ.85ee6038-e2c0-48d3-847a-8708b72d6c6e&execution=774b7f8c-9f41-4c23-950c-a911167795e8 HTTP/1.1
+Cookie: KC_RESTART=...
+
+username=ebook&password=ebook&login=Log+in
+----
+
+== Keycloak -> Browser : authentication code and redirect
+[source,http]
+----
+Location: http://127.0.0.1:8081/sso/login?state=0%2F73737f0c-a2ba-4caf-aebe-76003f6eb5bc&code=TC1V8v0eFI7HBXy7nODYUlsQ76esBNH3F6V89Cn2VuQ.85ee6038-e2c0-48d3-847a-8708b72d6c6e
+----
+
+.Location包含字段：
+* state: 0/73737f0c-a2ba-4caf-aebe-76003f6eb5bc
+* code: TC1V8v0eFI7HBXy7nODYUlsQ76esBNH3F6V89Cn2VuQ.85ee6038-e2c0-48d3-847a-8708b72d6c6e
+
+== Browser -> Application : login
+
+== Application -> Keycloak: request access token
+[source,http]
+----
+POST /auth/realms/master/protocol/openid-connect/token HTTP/1.1
+Authorization: Basic NDM5OV9lYm9va19zZXJ2ZXI6ZTVjYjZhZTktMDAyNi00NTVhLTlmNDAtMzNkMWEyNTdiNTBl
+
+grant_type=authorization_code
+code=TC1V8v0eFI7HBXy7nODYUlsQ76esBNH3F6V89Cn2VuQ.85ee6038-e2c0-48d3-847a-8708b72d6c6e
+redirect_uri=http://127.0.0.1:8081/sso/login
+client_session_state=1r70vl2b7utfpfeqnvp4gu6lf
+client_session_host=ww-20150310
+----
+
+.NOTE
+* Authorization Header是通过client_id和client_secret计算出来的
+
+
+== Keycloak -> Application: access token
+
+[source,json]
+----
+{
+    "access_token": "...",
+    "expires_in": 600,
+    "refresh_expires_in": 1800,
+    "refresh_token": "...",
+    "token_type": "bearer",
+    "id_token": "...",
+    "not-before-policy": 1461913402,
+    "session_state": "164808a1-bd53-454f-a2e4-0d3455d48358"
+}
+----
+
+其中的access_token，可以解开为(包含了group信息)：
+
+[source,json]
+----
+HEAD
+{
+  "alg": "RS256"
+}
+
+PAYLOAD
+{
+  "jti": "4988c185-1366-4865-80ae-d9af90ea9673",
+  "exp": 1462521226,
+  "nbf": 0,
+  "iat": 1462520626,
+  "iss": "http://keycloak.wan5d.com:9080/auth/realms/master",
+  "aud": "server",
+  "sub": "fec01d2a-39af-45bc-b9cd-98b855471f5a",
+  "typ": "Bearer",
+  "azp": "ebook_server",
+  "session_state": "164808a1-bd53-454f-a2e4-0d3455d48358",
+  "client_session": "85ee6038-e2c0-48d3-847a-8708b72d6c6e",
+  "allowed-origins": [],
+  "resource_access": {
+    "ebook_server": {
+      "roles": [
+        "admin"
+      ]
+    },
+    "lost_logger": {
+      "roles": [
+        "admin"
+      ]
+    },
+    "account": {
+      "roles": [
+        "manage-account",
+        "view-profile"
+      ]
+    }
+  },
+  "name": "",
+  "preferred_username": "ebook"
+}
+----
+
+其中的refresh_token，可以解开为：
+
+[source,json]
+----
+HEAD
+{
+  "alg": "RS256"
+}
+
+PAYLOAD
+{
+  "jti": "dfa4851a-557f-4e6e-bea8-f3d694084bd1",
+  "exp": 1462522426,
+  "nbf": 0,
+  "iat": 1462520626,
+  "iss": "http://keycloak.wan5d.com:9080/auth/realms/master",
+  "aud": "ebook_server",
+  "sub": "fec01d2a-39af-45bc-b9cd-98b855471f5a",
+  "typ": "Refresh",
+  "azp": "ebook_server",
+  "session_state": "164808a1-bd53-454f-a2e4-0d3455d48358",
+  "client_session": "85ee6038-e2c0-48d3-847a-8708b72d6c6e",
+  "resource_access": {
+    "ebook_server": {
+      "roles": [
+        "admin"
+      ]
+    },
+    "lost_logger": {
+      "roles": [
+        "admin"
+      ]
+    },
+    "account": {
+      "roles": [
+        "manage-account",
+        "view-profile"
+      ]
+    }
+  }
+}
+----
+
+其中的id_token，可以解开为：
+
+[source,json]
+----
+HEAD
+{
+  "alg": "RS256"
+}
+
+PAYLOAD
+{
+  "jti": "67a595fc-86bf-4118-85ec-522edc83a7ad",
+  "exp": 1462521226,
+  "nbf": 0,
+  "iat": 1462520626,
+  "iss": "http://keycloak.wan5d.com:9080/auth/realms/master",
+  "aud": "ebook_server",
+  "sub": "fec01d2a-39af-45bc-b9cd-98b855471f5a",
+  "typ": "ID",
+  "azp": "ebook_server",
+  "session_state": "164808a1-bd53-454f-a2e4-0d3455d48358",
+  "name": "",
+  "preferred_username": "ebook"
+}
+----
+
+= 工具
+* https://jwt.io/
