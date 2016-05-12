@@ -11,7 +11,7 @@ root: ../../../
 :toc: macro
 :toclevels: 4
 :sectnums:
-:imagesdir: /images
+:imagesdir: images
 :hp-tags: TLS, SSL, MAC
 
 = Security Notes
@@ -144,3 +144,135 @@ image::MAC.png[]
 === 流程
 
 image::Digital-Signature.png[]
+
+== TLS/SSL
+
+=== 版本
+
+* openssl支持SSLv3, TLSv1, TLSv1.1, TLSv1.2
+* SSLv2和SSLv3已经作废
+* TLSv1.3还在Draft
+
+=== 协议
+
+* 分为两个阶段
+** TLS handshake protocol
+** TLS record protocol
+* handshake的管理以下内容
+** 协商cipher suite
+** Session key信息(master secret)
+** 认证server，认证client(optional)
+* record管理的内容
+** 数据的integrity，使用mac
+** 数据加密
+
+==== Cipher suite
+
+一个ciper suite定义：
+
+* key exchange algorithm
+* bulk-date encryption algorithm type
+* MAC algorithm type
+
+完整的列表参考： https://msdn.microsoft.com/en-us/library/windows/desktop/aa380512(v=vs.85).aspx[TLS Cipher Suites]
+
+==== handshake流程
+
+image::tls-handshake.png[]
+
+* ClientHello
+** 我支持的版本
+** 我支持的Cipher suite
+** client的random number
+
+
+* ServerHello
+** 选择的版本
+** 选择的Cipher suite
+** server的random number
+
+* Certificate
+** server的certificate，包含了public key
+** client需要验证
+
+* ClientKeyExchange
+** Client自己生成pre-master key
+** 将pre-master key用server的public key加密
+** 这步骤可能随着Cipher suite有所不同（猜的)，比如Diffie Hellmen
+
+* server和client各自生存一个master-key
+** 生成的是一样的
+** 这是个对称密钥，作为后续报文使用
+
+image:ssl-master-key.png[]
+
+
+==== record protocol功能
+
+参考： https://msdn.microsoft.com/en-us/library/windows/desktop/aa380514(v=vs.85).aspx[TLS Record Protocol]
+
+*   Dividing outgoing messages into manageable blocks, and reassembling incoming messages.
+*   Compressing outgoing blocks and decompressing incoming blocks (optional).
+*   Applying a https://msdn.microsoft.com/en-us/library/windows/desktop/ms721594(v=vs.85).aspx#_security_message_authentication_code_gly[__Message Authentication Code__] (MAC) to outgoing messages, and verifying incoming messages using the MAC.
+*   Encrypting outgoing messages and decrypting incoming messages.
+
+==== certificate 的内容
+
+.Sample
+[source, ]
+----
+Certificate:
+ Data:
+  Version: 3 (0x2)
+  Serial Number:
+   bb:7c:54:9b:75:7b:28:9d
+  Signature Algorithm: sha1WithRSAEncryption
+  Issuer: C=MY, ST=STATE, O=CA COMPANY NAME, L=CITY, OU=X.509, CN=CA ROOT
+  Validity
+   Not Before: Apr 15 22:21:10 2008 GMT
+   Not After : Mar 10 22:21:10 2011 GMT
+  Subject: C=MY, ST=STATE, L=CITY, O=ONE INC, OU=IT, CN=www.example.com
+  Subject Public Key Info:
+   Public Key Algorithm: rsaEncryption
+    RSA Public Key: (1024 bit)
+     Modulus (1024 bit):
+      00:ae:19:86:44:3c:dd...
+      ...
+      99:20:b8:f7:c0:9c:e8...
+      38:c8:52:97:cc:76:c9...
+   Exponent: 65537 (0x10001)
+ X509v3 extensions:
+  X509v3 Basic Constraints: 
+   CA:FALSE
+ Netscape Comment: 
+  OpenSSL Generated Certificate
+ X509v3 Subject Key Identifier: 
+  EE:D9:4A:74:03:AC:FB...
+ X509v3 Authority Key Identifier: 
+  keyid:54:0D:DE:E3:37...
+
+ Signature Algorithm: sha1WithRSAEncryption
+  52:3d:bc:bd:3f:50:92...
+  ...
+  51:35:49:8d:c3:9a:bb...
+  b8:74
+----
+
+几个需要注意的
+
+* Issuer，是CA (root 或 intermediate)的DN (LDAP的Distinguished Name)
+* Subject, 证书的DN，DN中的CN一般是DNS
+
+
+
+
+
+== Reference
+* https://msdn.microsoft.com/en-us/library/windows/desktop/aa380516(v=vs.85).aspx[Transport Layer Security Protocol]
+* http://www.zytrax.com/tech/survival/encryption.html[Survival Guide - Encryption, Authentication]
+* http://www.zytrax.com/tech/survival/ssl.html[Survival guides - TLS/SSL and SSL (X.509) Certificates]
+* http://www.zytrax.com/books/ldap/apa/dn-rdn.html[Appendix A - LDAP: DN & RDN]
+
+* http://www.linuxidc.com/Linux/2016-05/131147.htm
+
+* https://msdn.microsoft.com/en-us/library/windows/desktop/aa376515(v=vs.85).aspx[Certificate Chains]
