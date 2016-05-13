@@ -30,7 +30,7 @@ root: ../../../
 ** play framework用keycloak-core和keycloak-adapter-core
 
 == 方案
-* 使用一个master realm，这样每个人自由一个账号
+* 使用一个master realm，这样每个人只有一个账号，不用记很多密码
 * 每个部署的应用增加一个Keycloak client，并在其中创建ROLE，通过给每个账号分配不同client的不同role实现权限管理
 * 应用通过从keycloak获取的group信息做athorization决策
 * 使用HTTPS连接到keycloak
