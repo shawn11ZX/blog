@@ -215,14 +215,14 @@ image:ssl-master-key.png[]
 *   Applying a https://msdn.microsoft.com/en-us/library/windows/desktop/ms721594(v=vs.85).aspx#_security_message_authentication_code_gly[__Message Authentication Code__] (MAC) to outgoing messages, and verifying incoming messages using the MAC.
 *   Encrypting outgoing messages and decrypting incoming messages.
 
-==== certificate
+=== certificate
 
 ==== 颁发流程
 
 .CA颁发流程
 image:https://upload.wikimedia.org/wikipedia/commons/9/96/Usage-of-Digital-Certificate.svg[]
 
-==== 内容
+==== Sample
 
 .Sample
 [source, ]
