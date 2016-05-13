@@ -216,7 +216,14 @@ image:ssl-master-key.png[]
 *   Applying a https://msdn.microsoft.com/en-us/library/windows/desktop/ms721594(v=vs.85).aspx#_security_message_authentication_code_gly[__Message Authentication Code__] (MAC) to outgoing messages, and verifying incoming messages using the MAC.
 *   Encrypting outgoing messages and decrypting incoming messages.
 
-==== certificate 的内容
+==== certificate
+
+==== 颁发流程
+
+.CA颁发流程
+image:https://upload.wikimedia.org/wikipedia/commons/9/96/Usage-of-Digital-Certificate.svg[]
+
+==== 内容
 
 .Sample
 [source, ]
@@ -276,3 +283,6 @@ Certificate:
 * http://www.linuxidc.com/Linux/2016-05/131147.htm
 
 * https://msdn.microsoft.com/en-us/library/windows/desktop/aa376515(v=vs.85).aspx[Certificate Chains]
+
+
+* https://www.sslshopper.com/article-most-common-openssl-commands.html[常见openssl命令]
