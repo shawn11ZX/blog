@@ -1,0 +1,62 @@
+---
+layout: post
+title: Keycloak Application
+shortTitle: Keycloak Application
+documentationExpanded: false
+comments: true
+postsExpanded: true
+root: ../../../
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: Keycloak
+
+= Keycloak Application
+
+我们公司对内有应用后台、运维，运营等应用需要需要内部人员登陆后使用。
+同时我们的这些应用在各个国家都有部署，并且需要给相应的合作方创建账号。
+
+== Keycloak对我们的作用
+
+* 免去自己编写认证，用户管理，群组管理等功能
+* 实现SSO
+
+== 应用的开发语言
+* 我们的网站有三种类型play framework, php和spring boot
+** spring boot直接用keycloak-spring-security-adapter
+** play framework用keycloak-core和keycloak-adapter-core
+
+== 方案
+* 使用一个master realm，这样每个人自由一个账号
+* 每个部署的应用增加一个Keycloak client，并在其中创建ROLE，通过给每个账号分配不同client的不同role实现权限管理
+* 应用通过从keycloak获取的group信息做athorization决策
+* 使用HTTPS连接到keycloak
+** 证书是认证过的，免得非IT人员在打开keycloak的时候因为浏览器警告而迷惑
+** 应用到keycloak也使用https，但是不做证书的合法性认证。因为证书有有效期，失效后会导致需要重新更新应用的trust-store，很麻烦
+* 网站对外是http的，对内必须是用https，否则无法使用keycloak的https。原因如下下面的代码：
+
+== 相关代码
+.OAuthRequestAuthenticator
+[source,java]
+----
+protected String getRedirectUri(String state) {
+        String url = getRequestUrl();
+        log.debugf("callback uri: %s", url);
+        if (!facade.getRequest().isSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
+            int port = sslRedirectPort();
+            if (port < 0) {
+                // disabled?
+                return null;
+            }
+            KeycloakUriBuilder secureUrl = KeycloakUriBuilder.fromUri(url).scheme("https").port(-1);
+            if (port != 443) secureUrl.port(port);
+            url = secureUrl.build().toString();
+        }
+        ...
+        }
+----
+
+

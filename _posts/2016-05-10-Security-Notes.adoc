@@ -11,7 +11,7 @@ root: ../../../
 :toc: macro
 :toclevels: 4
 :sectnums:
-:imagesdir: /images
+:imagesdir: ../images
 :hp-tags: TLS, SSL, MAC
 
 = Security Notes
@@ -48,7 +48,7 @@ toc::[]
 == 对称加密
 
 === 特点
-* Symmetric encryption, single­key, shared­secret, private­key systems, 使用一个（组）key加解密
+* 称呼：Symmetric encryption, single­key, shared­secret, private­key systems, 使用一个（组）key加解密
 * 一旦key泄露影响所有的人
 * 加密比非对称加密效率高，一般是加密bulk data streams的唯一方法
 * 常见key size: 64, 128, 192 or 256 bits.  
@@ -59,8 +59,7 @@ toc::[]
 * Triple DES (TDES a.k.a. TDEA (Triple Data Encryption Algorithm)), 
 * AES (Advanced Encryption Standard), 
 * IDEA (International Data encryption Algorithm)
-* RC4 (Rivest Cipher 4 ­ as of 2013 regarded as capable of being cracked,  
-though attacks not yet proven or published)  
+* RC4 (Rivest Cipher 4 as of 2013 regarded as capable of being cracked, though attacks not yet proven or published)  
 
 
 === 流程
