@@ -19,51 +19,76 @@ root: ../../../
 
 toc::[]
 
-== 相关类：io.netty.util.Recycler<T>  
+== 接口
 
-用法：
+* io.netty.util.Recycler<T>  
+* 继承该类，并复写方法：protected abstract T newObject(Handle<T> handle);
+* 获取对象：T get()
+* 回收对象：boolean recycle(T o, Handle<T> handle)  
 
-*   继承该类，并复写方法：protected abstract T newObject(Handle<T> handle);
-*   获取对象：T get()
-*   回收对象：boolean recycle(T o, Handle<T> handle)  
 需要注意的是，在回收时需要提供Handle对象，因此一般在实现newObject时，需要记录handle，比如T本身如果包含handle即可  
-实现：  
 
+* DefaultHandle实现了Handle接口，它有两个属性在初始化后不再变化
+
+**   object，表面被Pool的对象
+**   stack表面自己属于哪个Stack  
+
+
+[NOTE]
+代码： https://github.com/netty/netty/blob/3e5dcb5f3efbb26d5e6cf4cd229b03c285d62462/common/src/main/java/io/netty/util/Recycler.java[Recycler.java]
+
+== 特性
+
+* 每个线程实际上有自己的线程池，且线程A申请的内存最终还是只有A能get，不会被其他线程get
+* 理论上跨线程recycle会慢一点
+* io.netty.recycler.maxCapacity属性能在对象在同一个线程申请和会收时起作用，当对象在线程A申请，在线程B释放时，不受io.netty.recycler.maxCapacity影响
+
+== 数据结构
+
+.Recycler & Thread
 image::netty4-1.png[]
 
+.Stack & WeakOrderQueue
 image::netty4-2.png[]
 
-== DefaultHandle
 
-*   DefaultHandle实现了Handle接口，它有两个属性在初始化后不再变化
 
-*   object，表面被Pool的对象
-*   stack表面自己属于哪个Stack  
+.Stack
 
-== Stack
+* Stack维护一个数组，用来指向被缓存的对象，在扩容时，需要拷贝整个数组，并有一个扩容上限maxCapacity
+* 每个Recycler对象通过ThreadLocal为*各个线程*分配（首次引用时）独立的Stack
+* 每个Stack有一个元素为WeakOrderQueue的单向链表，首次在非本线程释放对象时，会创建一个WeakOrderQueue对象
 
-*   Stack维护一个数组，用来保存Pool的对象
-*   在扩容时，需要拷贝整个数组，并有一个扩容上限maxCapacity
-*   每个Recycler对象的通过ThreadLocal为每个线程分配一个Stack
-*   Recycler.get通过获得本线程的Stack，然后从该Stack中获取。在Stack的数组为空时，会使用WeakOrderQueue
+.WeakOrderQueue
 
-*   Recycler.recycle如果发现当前线程的Stack的就是Handle中指向的Stack，则简单调用该Stack的Recycle。否则，需要使用WeakOrderQueue
+* 该对象用来存放在其他线程释放的对象，因此每个Stack在每个释放过的线程都有一个该对象。
+* WeakOrderQueue是一个数组的单向链表，每个数组最多16个对象，这个单向链表在释放对象时往尾部插入，在请求对象时从头部取出
 
-==  WeakOrderQueue
 
-*   WeakOrderQueue是一个数组的列表，每个数组最多16个对象
-*   每个线程（所有Recycler对象共享）通过ThreadLocal维护一个Map<Stack, WeakOrderQueue>，该Map表面曾经在该线程recycle了哪些Stack的对象
-*   属于同一个Stack的WeakOrderQueue还通过WeakOrderQueue.next字段形成一个单向链表，Stack.next指向该单向链表
+.static FastThreadLocal<Map<Stack<?>, WeakOrderQueue>>
+* 每个线程有一个Map<Stack, WeakOrderQueue>，该Map表面曾经在该线程recycle了哪些Stack的对象
+* 在释放对象时，需要通过Stack查找到对应的WeakOrderQueue，然后把对象add到
+
+
+== 释放对象
+
 *   在Recycle过程中，如果Hanlde.stack属性不等于当前线程的Stack，会查找上面的Map获得（或创建）WeakOrderQueue，然后向该WeakOrderQueue放置对象。如果创建了WeakOrderQueue，则会维护单向链表
 
-*   在get过程中，如果当前线程的Stack里已经空了，则会Stack.next获取WeakOrderQueue单向链表，然后从该单向链表中挪一部分对象过来  
+* 在向WeakOrderQueue放置对象时，只会向最尾端的数组存放，如果该数组满了，就新申请一个
 
-==  对象从WeakOrderQueue挪动到Stack
+
+==  获取对象（Recycler.get）：
+
+* 从本线程之前释放的对象中获取: 通过获得本线程的Stack，然后从该Stack中获取。
+
+* 在Stack的数组为空时，会使用WeakOrderQueue，根据Stack.next获取WeakOrderQueue单向链表，然后从该单向链表中挪一部分对象过来。
+
+===  对象从WeakOrderQueue挪动到Stack
 
 *   从单向链表中获取head的WeakOrderQueue，然后数组列表中最多一个节点（16个对象）的对象移动到Stack
 *   如果上一步成功则返回，否则继续操作下一个WeakOrderQueue
-*   为了保持无锁，WeakOrderQueue的数组列表的每个节点（16个对象）维护一个写位置指针和读位置指针，写位置指针使用AtomicInteger，读位置指针使用普通的int。这是
-*   写位置指针不适用getAndIncrease或set，而是使用lazySet。根据下面的文章lazySet使用StoreStore Barrier在单writer时非常有用，比volatile性能好很多。
+*   为了保持无锁，WeakOrderQueue的数组列表的每个节点（16个对象）维护一个写位置指针和读位置指针，写位置指针使用AtomicInteger，读位置指针使用普通的int。
+*   写位置指针不使用getAndIncrease或set，而是使用lazySet。根据下面的文章lazySet使用StoreStore Barrier在单writer时非常有用，比volatile性能好很多。
 
 [NOTE]
 参考 
@@ -72,13 +97,25 @@ http://psy-lob-saw.blogspot.co.uk/2012/12/atomiclazyset-is-performance-win-for.h
 
 == 同步
 
-*   在整个过程中，有一个地方需要同步：创建并将WeakOrderQueue添加到单向链表中，并且Stack.next需要是volitile，因为他被其他线程更改以维护单向链表
-*   将WeakOrderQueue从单向链表删除不需要同步，因为挪动WeakOrderQueue中的对象到Stack这个操作，只会在Stack所在的线程会做
-*  
+* 在整个过程中，有一个地方需要同步：创建并将WeakOrderQueue添加到单向链表中
+[source,java]
+----
+ WeakOrderQueue(Stack<?> stack, Thread thread) {
+            head = tail = new Link();
+            owner = new WeakReference<Thread>(thread);
+            synchronized (stack) {
+                next = stack.head;
+                stack.head = this;
+            }
+        }
+----
+* Stack.next需要是volitile，因为他被其他线程更改以维护单向链表
+[source,java]
+----
+private volatile WeakOrderQueue head;
+----
 
-== 内存使用
+* 将WeakOrderQueue从单向链表删除不需要同步，因为挪动WeakOrderQueue中的对象到Stack这个操作，只会在Stack所在的线程会做
+ 
 
-*   每个线程实际上有自己的线程池，且线程A申请的内存最终还是只有A能get，不会被其他线程get。当然get后能被其他线程使用
-*   io.netty.recycler.maxCapacity属性能在对象在同一个线程申请和会收时起作用
-*   当对象在线程A申请，在线程B释放时，不受io.netty.recycler.maxCapacity影响  
   
