@@ -1,0 +1,47 @@
+---
+layout: post
+title: Build your own AngularJS reading notes
+shortTitle: Build your own AngularJS reading notes
+documentationExpanded: false
+comments: true
+postsExpanded: true
+root: ../../../
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: AngularJS 
+
+= Build your own AngularJS reading notes
+
+* Author: Tero Parviainen, 自由软件开发者，还写过__Real-time Web Application Development using Vert.x 2.0__
+* 总体感觉：这本书深度优先的讨论如何实现AngularJS，一个TOPIC深入很多再继续下一个，比较难在短时间内能学到大纲。
+
+== 开发环境
+* 静态分析: JSHint
+* 单元测试: 
+** Jasmine, UT Spec
+** Sinon:
+** Karma: test runner 
+** phantomjs: headless browser
+* 开发：
+** Browserify: 能然客户端代码使用module功能
+** LoDash: Array and object manipulation
+** JQuery: DOM query and manipulation
+
+== Scope
+=== Scope and Digest
+* Scope object
+* Scope.$watch: 变更注册。注册一个返回*值*的函数和一个回调函数，但*值*变化时，调用回调函数
+* Scope.$digest: 变更通知。遍历$watch注册的函数，根据值的变化，调用相应的回调函数
+* Scope.$apply: 用于外部库接入AngularJS。执行一个函数，该函数用来修改Scope，然后调用$digest触发变更通知
+* Scope.$eval: 执行一个函数，并传递Scope作为其第一个参数
+* Scope.$evalAsync：注册一个将来执行的函数，类似于Javascript里的setTimeout
+* Scope.$applyAysnc: 延迟执行apply
+
+
+== Expression and Filters
+== Modules and Dependency injection
+== Utilities
