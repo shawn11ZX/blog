@@ -2,10 +2,6 @@
 layout: post
 title: Netty4 Transport
 shortTitle: Netty4 Transport
-documentationExpanded: false
-comments: true
-postsExpanded: true
-root: ../../../
 ---
 
 :toc: macro
@@ -14,8 +10,6 @@ root: ../../../
 :imagesdir: /images
 :hp-tags: TLS, SSL, MAC
 :doctypes: book
-
-= Netty4 NioLoopGroup
 
 toc::[]
 
@@ -165,6 +159,7 @@ image:netty-AbstractChannel-do.png[]
 * EventLoopGroup为NioEventLoopGroup或相关子类中的实现
 * EventLoop为NioEventLoop或相关子类中的实现
 
+image:ServerBootStrap_bind.png[]
 
 [plantuml,ServerBootStrap_bind,png,width="100%"]
 ----
