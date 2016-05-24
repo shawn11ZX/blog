@@ -1,0 +1,121 @@
+---
+layout: post
+title: AngularJS 1 Notes
+shortTitle: AngularJS 1 Notes
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: AngularJS
+:doctypes: book
+
+toc::[]
+
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
+== application life-cycle
+* configuration: configures and instantiates all providers
+* run:  interaction with providers is disallowed and the process of creating services starts
+
+在optool scala中：
+
+* configuration阶段(app.js)：配置ngRouteProvider, httpProvider, ngDialogProvider
+* run阶段：统一ping，其他行为
+
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
+== provider
+
+* AngularJS的injector会使用recipes创建两类对象
+** services: 接口由开发人员自己定义
+** special purpose objects：包括directive, controller, filter和animation
+
+* AngularJS的有五种recipes定义如何创建对象：
+** Value
+** Factory
+** Service
+** Provider
+** Constant
+
+注意不要把Provider和Factory混淆。
+
+在Configuration阶段（即module.config函数中），可以引用constant和provider。
+
+* Factory和Service最常用（optool scala使用factory来定义rest api）。
+** factory可以传入函数或者javascript的primitives
+** service只能之传入一个构造函数指针
+
+* provider需要返回的对象有一个$get函数, Provider是底层实现，其他的都是syntactic sugar。
+
+[source,javascript]
+----
+
+// value
+myApp.value('clientId', 'a12345654321x');
+
+// factory
+myApp.factory('unicornLauncher', ["apiToken", function(apiToken) {
+  return new UnicornLauncher(apiToken);
+}]);
+
+// service
+myApp.service('unicornLauncher', ["apiToken", UnicornLauncher]);
+
+// provider
+myApp.provider('unicornLauncher', function UnicornLauncherProvider() {
+  var useTinfoilShielding = false;
+
+  this.useTinfoilShielding = function(value) {
+    useTinfoilShielding = !!value;
+  };
+
+  this.$get = ["apiToken", function unicornLauncherFactory(apiToken) {
+
+    // let's assume that the UnicornLauncher constructor was also changed to
+    // accept and use the useTinfoilShielding argument
+    return new UnicornLauncher(apiToken, useTinfoilShielding);
+  }];
+});
+
+// constant
+myApp.constant('planetName', 'Greasy Giant');
+----
+
+* All special purpose objects except for the Controller are defined via __Factory__ recipes.
+
+|====
+| Features / Recipe type | Factory | Service | Value | Constant | Provider
+| can have dependencies | yes | yes | no | no | yes
+| uses type friendly injection | no | yes | yes* | yes* | no
+| object available in config phase | no | no | no | yes | yes**
+| can create functions | yes | yes | yes | yes | yes
+| can create primitives | yes | no | yes | yes | yes
+|====
+
+[source,]
+----
+* at the cost of eager initialization by using ``new`` operator directly
+
+** the service object is not available during the config phase, but the provider instance is
+----
+
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+== Scope and Digest
+* Scope object
+* Scope.$watch: 变更注册。注册一个返回*值*的函数和一个回调函数，但*值*变化时，调用回调函数
+* Scope.$digest: 变更通知。遍历$watch注册的函数，根据值的变化，调用相应的回调函数
+* Scope.$apply: 用于外部库接入AngularJS。执行一个函数，该函数用来修改Scope，然后调用$digest触发变更通知
+* Scope.$eval: 执行一个函数，并传递Scope作为其第一个参数
+* Scope.$evalAsync：注册一个将来执行的函数，类似于Javascript里的setTimeout
+* Scope.$applyAysnc: 延迟执行apply
+
+== Reference
+
+* http://www.jvandemo.com/the-nitty-gritty-of-compile-and-link-functions-inside-angularjs-directives/[关于AngularJS的compile和link过程的文章]
+
+* https://github.com/angular/angular.js/wiki/Understanding-Scopes[Understanding AngularJS Scopes]

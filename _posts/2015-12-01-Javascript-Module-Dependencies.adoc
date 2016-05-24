@@ -1,0 +1,96 @@
+---
+layout: post
+title: Javascript module dependencies
+shortTitle: Javascript module dependencies
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: Javascript, AMD, CommonJS, RequireJS, ES6
+:doctypes: book
+
+toc::[]
+
+== Javascript的package dependency
+
+有三种specification
+
+* AMD: https://en.wikipedia.org/wiki/Asynchronous_module_definition[asynchornous module defination]
+* https://en.wikipedia.org/wiki/CommonJS[CommonJS]
+* https://en.wikipedia.org/wiki/ECMAScript[ES6 Harmony]
+
+相应的implementation:
+
+* AMD: requireJS
+* CommonJS: broswerify, webpack
+* ES6: https://github.com/google/traceur-compiler[Traceur Compiler], http://babeljs.io/[Babel] or https://github.com/rollup/rollup[Rollup]
+
+相关的语法：
+
+=== AMD
+
+Defining the module in somethingAwesome.js
+
+[source,java]
+----
+define(function {
+  console.log('Awesome');
+});
+
+----
+
+Consuming the module, note that you do not necessary need to follow the same name of the module.
+
+[source,java]
+----
+define(['somethingAwesome'], function (thatAwesomeSomething) {
+  thatAwesomeSomething();
+});
+
+----
+
+=== CommonJS
+
+Defining the module in somethingAwesome.js
+
+[source,java]
+----
+module.exports = function(){
+  console.log('Awesome');
+}
+
+----
+
+When consuming it somewhere else.
+
+[source,java]
+----
+// Import our awesome module, you can call it anything you want
+var thatAwesomeSomething = require('somethingAwesome');
+// Use it
+thatAwesomeSomething();
+
+----
+
+=== ES6
+
+[source,java]
+----
+//ES6
+import Class1 from 'file1';  
+import Class2 from 'file2';
+
+let obj = newClass1(),  
+    obj2 = new Class2();
+
+export default obj.foo(obj2);  
+----
+
+[NOTE]
+====
+* http://benmccormick.org/2015/05/28/moving-past-requirejs/[Moving Past RequireJS]
+* http://www.redairship.com/2015/05/making-sense-difference-amd-commonjs-requirejs-browserify/[Making sense of the difference between AMD, CommonJS, RequireJS and Browserify]
+====
+
