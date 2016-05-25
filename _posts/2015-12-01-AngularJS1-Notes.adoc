@@ -122,7 +122,7 @@ myApp.constant('planetName', 'Greasy Giant');
 * directive有三种:
 ** scope: false，直接使用现有的scope，需要小心
 ** scope: true，创建自己的scope，并有继承关系
-** scope: {...}，创建自己的scope，没有继承parent scope，但是又$parent属性。这种scope又有三种绑定方式
+** scope: {...}，isolated scope 创建自己的scope，没有继承parent scope，但是又$parent属性。这种scope又有三种绑定方式
 *** one way: @　需要传入字符串？或者{{var}}
 *** two way: =　传入父scope的属性
 *** bind to parent scope expressions: &
@@ -140,6 +140,65 @@ image::https://camo.githubusercontent.com/0c650e5b62347beec5ebbb4990673a523a8096
 image::https://camo.githubusercontent.com/4d9a7cbb029bb29d66cbbef0f0527b2d40202d90/687474703a2f2f692e737461636b2e696d6775722e636f6d2f41684f47482e706e67[transcluded scope]
  
 
+=== isolated scope中的 &
+
+Developer Guide中的例子
+
+.script.js
+[source,javascript]
+----
+angular.module('docsIsoFnBindExample', [])
+.controller('Controller', ['$scope', '$timeout', function($scope, $timeout) {
+  $scope.name = 'Tobias';
+  $scope.message = '';
+  $scope.hideDialog = function (message) {
+    $scope.message = message;
+    $scope.dialogIsHidden = true;
+    $timeout(function () {
+      $scope.message = '';
+      $scope.dialogIsHidden = false;
+    }, 2000);
+  };
+}])
+.directive('myDialog', function() {
+  return {
+    restrict: 'E',          // (1.1)
+    transclude: true,
+    scope: {
+      'close': '&onClose' // (1.2)
+    },
+    templateUrl: 'my-dialog-close.html'
+  };
+});
+----
+.index.html
+[source,html]
+----
+
+  {{message}}
+  <my-dialog ng-hide="dialogIsHidden" on-close="hideDialog(message)"> // (2)
+    Check out the contents, {{name}}!
+  </my-dialog>
+
+----
+
+.my-dialog-close.html
+[source,html]
+----
+<div class="alert">
+  <a href class="close" ng-click="close({message: 'closing for now'})">&times;</a> // (3)
+  <div ng-transclude></div>
+</div>
+----
+
+https://plnkr.co/edit/h8eB9PDnRT7ASfQ2YnNo?p=preview[plunker]
+
+解读如下:
+
+* (1.1) (1.2) scope的close属性绑定到onClose element
+* (2)　这里angluarJS会使用 https://docs.angularjs.org/api/ng/service/$parse[$parse]，解析出一个function，在调用该function时，需要传递context和locals对象。这个表达式中涉及identifier需要在context或locals对象中定义（以字段的形式）
+* (3) 当click时，调用(2)中的function，context为父类的scope, locals为 {message: 'closing for now'}
+* 可以看出(2)和(3)中的message需要匹配，否则无法传递参数 
 
 
 == Reference
@@ -147,3 +206,7 @@ image::https://camo.githubusercontent.com/4d9a7cbb029bb29d66cbbef0f0527b2d40202d
 * http://www.jvandemo.com/the-nitty-gritty-of-compile-and-link-functions-inside-angularjs-directives/[关于AngularJS的compile和link过程的文章]
 
 * https://github.com/angular/angular.js/wiki/Understanding-Scopes[Understanding AngularJS Scopes]
+
+* https://gist.github.com/CMCDragonkai/6282750[AngularJS Directive Attribute Binding Explanation]
+
+* https://www.webcodegeeks.com/javascript/angular-js/magic-parse-service-angularjs/[Magic $parse service in AngularJS]
