@@ -114,6 +114,34 @@ myApp.constant('planetName', 'Greasy Giant');
 * Scope.$evalAsync：注册一个将来执行的函数，类似于Javascript里的setTimeout
 * Scope.$applyAysnc: 延迟执行apply
 
+=== scope分类
+
+* angularJS里scope的继承，依赖javascript的prototype chain
+* 这些东西会创建新的scope:  ng-repeat, ng-include, ng-switch, ng-view, ng-controller, directive with ``scope: true``, directive with ``transclude: true``.
+* ng-repeat创建scope的方式比较特别，在child scope里增加一个会以repeat的变量名为名字的属性
+* directive有三种:
+** scope: false，直接使用现有的scope，需要小心
+** scope: true，创建自己的scope，并有继承关系
+** scope: {...}，创建自己的scope，没有继承parent scope，但是又$parent属性。这种scope又有三种绑定方式
+*** one way: @　需要传入字符串？或者{{var}}
+*** two way: =　传入父scope的属性
+*** bind to parent scope expressions: &
+
+``<my-directive interpolated="{{parentProp1}}" twowayBinding="parentProp2">`` and   
+``scope: { interpolatedProp: '@interpolated', twowayBindingProp: '=twowayBinding' }``   
+
+Assume the directive does this in its linking function: ``scope.someIsolateProp = "I'm isolated"``   
+
+image::https://camo.githubusercontent.com/0c650e5b62347beec5ebbb4990673a523a80968c/687474703a2f2f692e737461636b2e696d6775722e636f6d2f45586a5a712e706e67[isolate scope]
+ 
+ 
+* directive的transclude: true会创建一个新的scope（如下），其中的$$nextSibling可以被ng-transclude使用　
+
+image::https://camo.githubusercontent.com/4d9a7cbb029bb29d66cbbef0f0527b2d40202d90/687474703a2f2f692e737461636b2e696d6775722e636f6d2f41684f47482e706e67[transcluded scope]
+ 
+
+
+
 == Reference
 
 * http://www.jvandemo.com/the-nitty-gritty-of-compile-and-link-functions-inside-angularjs-directives/[关于AngularJS的compile和link过程的文章]
