@@ -22,13 +22,14 @@ Wikipedia上介绍了 https://en.wikipedia.org/wiki/Operator-precedence_parser[�
 - Top down precedence algorithm
 - Precedence climbing algorithm
 
-shunting yard algorithm在开源项目 https://github.com/uklimaschewski/EvalEx[EvalEx]中使用到，Top down precedence algorithm在Beautiful Code这本书和开源项目https://en.wikipedia.org/wiki/Rodin_tool[Rodin Tool]中有介绍
+shunting yard algorithm在开源项目 https://github.com/uklimaschewski/EvalEx[EvalEx]中使用到，Top down precedence algorithm在Beautiful Code这本书和开源项目 https://en.wikipedia.org/wiki/Rodin_tool[Rodin Tool]中有介绍
 
 我只用Top down precedence algorithm给以前的一个CBTC仿真项目写过CBI规则的evaluation
 
+限制：the operator-precedence parser can parse all LR(1) grammars where two consecutive http://www.revolvy.com/main/index.php?s=Nonterminal&item_type=topic&overlay=1[nonterminals] never appear in the right-hand side of any rule.
+
 == Top down precedence algorithm原理
 
-TDPA不能处理
 
 TDPA的核心就是下面一个递归函数expression()：
 
