@@ -1,0 +1,102 @@
+---
+layout: post
+title: Parsing simple expressions
+shortTitle: Parsing simple expressions
+documentationExpanded: false
+comments: true
+postsExpanded: true
+root: ../../../
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: Keycloak
+
+== 方法
+
+Wikipedia上介绍了 https://en.wikipedia.org/wiki/Operator-precedence_parser[三种]Bottom Up Parser用来解析表达式，分别是：
+
+- Edsger Dijkstra的shunting yard algorithm
+- Top down precedence algorithm
+- Precedence climbing algorithm
+
+shunting yard algorithm在开源项目 https://github.com/uklimaschewski/EvalEx[EvalEx]中使用到，Top down precedence algorithm在Beautiful Code这本书和开源项目https://en.wikipedia.org/wiki/Rodin_tool[Rodin Tool]中有介绍
+
+我只用Top down precedence algorithm给以前的一个CBTC仿真项目写过CBI规则的evaluation
+
+== Top down precedence algorithm原理
+
+TDPA不能处理
+
+TDPA的核心就是下面一个递归函数expression()：
+
+[source,javascript]
+----
+var expression = function (rbp) {
+    var left;
+    var t = token; 
+    advance( );　   // (2)
+    left = t.nud( ); // (1)
+    while (rbp < token.lbp) { // (3)
+        t = token;
+        advance( );
+        left = t.led(left);
+    }
+    return left; // (4)
+}
+----
+
+一个典型的中缀运算符实现
+
+[source,javascript]
+----
+symbol("*", 70).led = function (left) {  
+    this.first = left;  
+    this.second = expression(70);  
+    this.arity = "binary";  
+    return this;  
+};  
+----
+
+给定一个父节点的优先级，expression函数出解析一个表达式，这个表达式最顶层的运算符的优先级不会*低于*给定的父节点的优先级
+
+首先需要给operator定义nud或/和led函数
+
+- 前缀表达式和值(literal, constant)：定义nud(null denotation符号)
+- 中缀和后缀操作符: 定义led(left denomination)
+
+注意nud和led返回的也是一个expression，并且可能递归的调用expression
+
+该算法描述如下：
+
+- (1) 表达式的第一个字段必须后面几种之一：前缀表达式，值(literal, constant) ，因此调用第一个token的nud函数，返回一个表达式用left表示
+- (2) 读取第二个符号
+- (3) 当父节点的优先级小于当前token(操作符)的优先级时，继续把该token左边的表达式(树）给他，从而解析出新的left
+- (4) 返回left
+- 开始解析式expression的rbp为0
+
+例如给定表达式 a + b * c * d，假定+的优先级为1, *为2
+
+执行过程: 
+
+[tree,file="simple_expressoin.png"]
+--
+expression(0)
+|
+|-- symbol.nud(): ruturn a
+|-- plus.led(a): return a + b * c * d
+|-- expression(1): to get right tree of plus
+|   |
+|   |-- symbol.nud(): return b
+|      |
+|      |-- mult.led(b): return b * c
+|      |-- mult.led(b * c): return b * c * d
+--
+
+== Ref
+
+* Beautiful Code: Leading Programmers Explain How They Think 
+* http://www.revolvy.com/main/index.php?s=Operator-precedence%20parser&item_type=topic[ Operator-precedence parser]
+* https://en.wikipedia.org/wiki/Operator-precedence_parser[Operator-precedence parser]

@@ -1,0 +1,21 @@
+---
+layout: post
+title: ngAdmin Notes
+shortTitle: ngAdmin Notes
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: AngularJS, ngAdmin
+:doctypes: book
+
+toc::[]
+
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
+== 依赖
+
+* http://angular-ui.github.io/ui-router/[ur-routes]: 根据状态调用controller/template
