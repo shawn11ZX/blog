@@ -38,7 +38,7 @@ TDPA的核心就是下面一个递归函数expression()：
 var expression = function (rbp) {
     var left;
     var t = token; 
-    advance( );　   // (2)
+    advance( ); // (2)
     left = t.nud( ); // (1)
     while (rbp < token.lbp) { // (3)
         t = token;
