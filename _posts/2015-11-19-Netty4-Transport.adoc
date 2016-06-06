@@ -7,74 +7,57 @@ shortTitle: Netty4 Transport
 :toc: macro
 :toclevels: 4
 :sectnums:
-:imagesdir: /images
+:imagesdir: ../images
 :hp-tags: TLS, SSL, MAC
 :doctypes: book
 
 toc::[]
 
+
+///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+
+== EventLoop
+
 image:netty-eventLoop.png[]
 
+=== 相关类
 
 * 方框内是interface，方框外是class
 * 浅蓝色是java.util.concurrent包中的executor
 * 绿色是 io.netty.util.concurrent包中的EventExecutor
 * 黄色是 io.netty.util.concurrent包中的EventLoop
 
+Executor相关类主要负责（立即或者定时）执行Runnable/Callable；EventExecutor类增加了判断当前线程是否在EventLoop中的方法；EventLoop相关类提供接口将Channel register/unregister到一个EventLoop，另外返回一个返回ChannelHandlerInvoker用于在EventLoop触发register/active/write等行为或事件
 
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
-== 相关interface（中间部分）
 
+[width="100%",options="header,footer"]
+|====================
+| 类 | 提示 
+| Executor | 执行Runnable 
+| ExecutorService | 执行Callable;  shutdown 
+| ScheduledExecutorService  | 定时执行Runnable和Callable 
+| EventExecutor | 判断当前线程是否在本executor：inEventLoop 
+| EventExecutorGroup | shudown; EventExector集合 
+| EventLoop | 返回ChannelHandlerInvoker，用于在EventLoop触发register,active, write等行为或事件 
+| EventLoopGroup | EventLoop集合;register channel; 返回EventExecutor（next函数） 
+|====================
 
+=== NioEventLoop相关实现
 
-=== Executor(浅蓝色）
-* Executor
-** 执行Runnable
-* ExecutorService: 
-** 执行Callable
-** shutdown
-* ScheduledExecutorService
-** 定时执行Runnable和Callable
+类NioEventLoop实现了EventLoop，但其具体的实现通过上层的类提供： AbstractScheduledEventExecutor和SingleThreadEventExecutor和SingleThreadEventLoop。
 
-=== EventExecutor（绿色）
-* EventExecutor
-** 判断当前线程是否在本executor：inEventLoop
-* EventExecutorGroup
-** shudown
-** EventExector集合
+.AbstractScheduledEventExecutor
 
-=== EventLoop (黄色）
-* EventLoop
-** 返回ChannelHandlerInvoker，用于在EventLoop触发register,active, write等行为或事件
-* EventLoopGroup
-** EventLoop集合
-** register channel
-** 返回EventExecutor（next函数）
+* 实现schedule Runnable/Callable功能；
+* 有一个scheduledTaskQueue，用PriorityQueue实现，头部是到期时间最早的task
 
+.SingleThreadEventExecutor
 
-///////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-
-== EventLoop相关实现class（右侧部分）
-
-=== AbstractEventExecutor
-
-没啥东西
-
-=== AbstractScheduledEventExecutor
-
-实现schedule Runnable/Callable功能
-
-有一个scheduledTaskQueue，用PriorityQueue实现，头部是到期时间最早的task
-
-
-
-=== SingleThreadEventExecutor
-
-构造时需要一个Executor，用来执行主线程，主线程会调用自己的run函数，该函数需要子类去override。
-
+基于AbstractScheduledEventExecutor提供了addTask和pollTask的功能。
 
 拥有两个queue：
 
@@ -83,7 +66,10 @@ image:netty-eventLoop.png[]
 
 函数takeTask用来获取一个需要马上执行的runnable，函数的实现如下：
 
-* 查看scheduledTaskQueue头，如果没有任何scheduled task，则从taskQueue中take(无限等待）。感觉这里有bug，即在无限等待过程中，新加入scheduled tastk queue的task不会被执行
+* 查看scheduledTaskQueue头，如果没有任何scheduled task，则从taskQueue中take(无限等待）。
+
+[NOTE] 
+感觉这里有bug，即在无限等待过程中，新加入scheduled tastk queue的task不会被执行
 
 * 如果有scheduled task，则检查dueTime。
 ** 如果已经到期，则返回。
@@ -91,56 +77,37 @@ image:netty-eventLoop.png[]
 *** 如果dueTime到了taskQueue还没有东西，则返回scheduled task。
 *** 否则返回taskQueue里的东西。
 
-boolean runAllTasks(long timeoutNanos) 会被子类用到，执行task知道时间到，主要用来设置io和task的时间比。
+boolean runAllTasks(long timeoutNanos) 会被子类用到，执行task直到timeout。
 
-=== SingleThreadEventLoop
+.SingleThreadEventLoop
 
-没啥东西……
+这个类没啥东西
 
-=== NioEventGroup
+.NioEventLoop本身
 
-这个类很大
+依靠Java NIO（如Selector），提供了register channel的相关功能(中间需要调用Channel.register）。同时，override SingleThreadEventExecutor中的run函数，从而定义线程主循环。
 
-run函数（override SingleThreadEventExecutor.run)
+主循环逻辑如下：
 
-* 处理selected keys，遍历java.nio.channels.SelectionKey列表，同时计算总处理时间
-** 处理read和accept
-** 处理write
-** 处理connect
-* 处理tasks，根据ioRatio，计算留给tasks的计算时间，并调用SingleThreadEventExecutor.runAllTasks处理相关task
+* select并等待唤醒(这里逻辑复杂，看不懂）
+* 根据设置的io/task执行时间比例，按比例执select到的任务和task任务
 
-* 处理shutdown（如果有）
+select到的任务主要指socket的read/write，task任务主要指提交的Runnable和Callable
 
-
-///////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-
-== EventLoopGroup相关实现class（左侧部分）
-
-=== AbstractEventExecutorGroup
-
-没啥东西
-
-=== MultithreadEventExecutorGroup
-
-构造时，需要设置
-
-* nThreads，子EventExector个数
-* Executor，用来传递给newChild函数（需要子类实现）
-** 如果为null，则自动创建一个ThreadPerTaskExecutor，其execute函数会新建线程去执行Runnable
-
-其next函数会round robin的返回构造时创建的EventExecutor
-
-=== MultithreadEventLoopGroup
-
-没啥东西
-
-=== NioEventLoopGroup
-
-其newChild函数返回NioEventLoop
-
-
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
 == Channel
+
+=== 相关类
+
+image:netty-channel.png[]
+
+=== NioServerSocketChannel
+在使用ServerBootStrap时，需要提供一个Channel类，用来处理server socket的read操作（即accept）。使用NIO + TCP时，一般使用NioServerSocketChannel。
+
+很奇怪的是，该类继承AbstractNioMessageChannel，这是因为AbstractNioMessageChannel实现了read函数(确切的说是实现了AbstractNioUnsafe子类），并会要求子类实现一个readMessage。而NioServerSocketChannel.readMessage则通过调用accept返回一个NioSocketChannel对象。
+
+
 
 === AbstractChannel
 
@@ -150,46 +117,7 @@ run函数（override SingleThreadEventExecutor.run)
 image:netty-AbstractChannel-do.png[]
 
 
-
-=== ServerBootStrap.bind流程
-
-下图
-
-* Channel为NioServerChannel或相关子类中的实现
-* EventLoopGroup为NioEventLoopGroup或相关子类中的实现
-* EventLoop为NioEventLoop或相关子类中的实现
-
-image:ServerBootStrap_bind.png[]
-
-[plantuml,ServerBootStrap_bind,png,width="100%"]
-----
-@startuml
-
-participant AbstractBootStrap
-participant ChannelFactory
-
-BootStrap -> BootStrap: doBind
-group 
-    BootStrap -> BootStrap: initAndRegister
-    BootStrap -> ChannelFactory: newChannel
-    BootStrap -> EventLoopGroup: register(channel)
-    EventLoopGroup -> EventLoopGroup: next
-    EventLoopGroup -> EventLoop: register
-    EventLoop -> Channel: register(this, promise)
-    Channel -> Channel: 根据inEventLoop同步或异步register0; 设置this.eventLoop; 调用子类doRegister
-    Channel -> SelectableChannel: register(java nio实现)
-    Channel -> ChannelPipeline: callHandlerAdded0触发ctx.handler().handlerAdded(ctx)
-    Channel -> ChannelPipeline: fireChannelRegistered
-end
-group
-    BootStrap -> BootStrap: doBind0
-    BootStrap -> Channel: 在Channel的EventLoop中调用bind，触发ChannelHandlerInvoker.invokeBindNow
-end 
-@enduml
-----
-
-
-=== DefaultChannelPipeline
+== Pipeline
 
 image:netty-pipeline.png[]
 
@@ -203,19 +131,107 @@ image:netty-pipeline.png[]
 
 * 内建的TailContext没什么特别处理，只对没人处理的ByteBuf做释放操作
 
+== AddressResolver
+
+Netty中的AddressResolver负责将名字翻译成SocketAddress。为了提高速度(Or somthing else)，Netty定义了AddressResolverGroup，每个EventExecutor关联一个Resolver
+
+Netty有三种AddressResolverGroup实现:
+
+* DefaultAddressResolverGroup: 通过Java自带的InetAddress.getByName来解析
+* DnsAddressResolverGroup：Netty自己实现的一套DNS解析，有Cache功能
+* NoopAddressResolverGroup: 啥都不干
+
+
+在调用BootStrap.connect()时，会在当前线程调用AddressResolver.resolve(remoteAddress)，而默认的实现DefaultAddressResolverGroup这个操作是*阻塞*的！
+
+DnsAddressResolverGroup实现没看(貌似是4.1新出的功能)，不过应该不会是阻塞的(但是也会在Channel的EventGroup上执行)。构造的时候需要：
+
+* EventLoop
+* name server list
+
+
+///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+== 相关流程
+
+下面的相关流程特指NioServerSocketChannel/NioSocketChannel
+
+==== bind流程
+
+* 新建一个Channel
+* 注册到boss group，注册时触发事件
+** fireChannelRegistered
+** fireChannelActive(如果是第一次注册，例如unregister后再register没有这个事件）
+* 调用Java NIO bind到端口
+
+如下图：　
+
+* Channel为NioServerChannel或相关子类中的实现
+* EventLoopGroup为NioEventLoopGroup或相关子类中的实现
+* EventLoop为NioEventLoop或相关子类中的实现
+
+image:ServerBootStrap_bind.png[]
+
+[plantuml,ServerBootStrap_bind,png,width="100%"]
+----
+@startuml
+
+
+BootStrap -> BootStrap: doBind
+group 
+    BootStrap -> BootStrap: initAndRegister
+    BootStrap -> ChannelFactory: newChannel
+    BootStrap -> EventLoopGroup: register(channel)
+    EventLoopGroup -> EventLoopGroup: next
+    EventLoopGroup -> EventLoop: register
+    EventLoop -> Channel: register(this, promise)
+    Channel -> Channel: 根据inEventLoop同步或异步register0; 设置this.eventLoop; 调用子类doRegister
+    Channel -> SelectableChannel: register(java nio实现)
+    Channel -> ChannelPipeline: callHandlerAdded0触发ctx.handler().handlerAdded(ctx)
+    Channel -> ChannelPipeline: fireChannelRegistered
+    BootStrap -> BootStrap: doBind0
+    BootStrap -> Channel: 在Channel的EventLoop中调用bind，触发ChannelHandlerInvoker.invokeBindNow
+end 
+@enduml
+----
+
+
+
+==== accept流程
+
+ServerBootstrap继承自AbstractBootStrap，前者在构造时需要两个EventLoopGroup：boss和worker
+而后者在构造时，只需要一个EventLoopGroup。这是因为ServerBootstrap把需要bind和listen的Channel让父类处理，处理的逻辑定义在ServerBootstrapAcceptor：
+
+* 实现ChannelInboundHandlerAdapter
+* 当channelRead时（有新的Channel时），将childHander应用到该Channel上
+* 在worker group上注册这个新的Channel
+
+==== connect流程
+
+* 新建一个Channel
+* 注册到boss group，注册时触发事件
+** fireChannelRegistered
+** fireChannelActive(如果是第一次注册，例如unregister后再register没有这个事件）
+* resolve name
+* 调用channel.connect
+
+
+
+
 ==== write流程
 
 * 用户调用Channel.write
 
 * 调用Pipeline.tail（TailContext）的write，默认实现是查找下一个个Outbound Context，并根据是否在eventloop，同步或异步的调用ChannelOutboundHandler.write函数
 
-* 我们顶一个一个ChannelOutboundHandler时，默认在最后也会调用context.write，因此又继续调用下一层
+* 我们定义一个ChannelOutboundHandler时，默认在最后也会调用context.write，因此又继续调用下一层
 
 * 最终，会调用到Pipeline.head（HeadContext）的write，默认实现时调用AbstractChannel中的write。
 
 * AbstractChannel的write默认是放到一个ChannelOutboundBuffer，只有flush时才真正write（细节由channel实现）
 
-===　read流程
+
+=== read流程
 
 * 读的发起地是NioEventLoop，在处理SelectionKey.OP_READ时发起。首先调用Channel的read（不同channel不同的实现）
 
