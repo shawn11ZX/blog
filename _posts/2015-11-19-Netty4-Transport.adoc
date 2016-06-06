@@ -7,7 +7,7 @@ shortTitle: Netty4 Transport
 :toc: macro
 :toclevels: 4
 :sectnums:
-:imagesdir: ../images
+:imagesdir: /images
 :hp-tags: TLS, SSL, MAC
 :doctypes: book
 
@@ -142,7 +142,7 @@ Netty有三种AddressResolverGroup实现:
 * NoopAddressResolverGroup: 啥都不干
 
 
-在调用BootStrap.connect()时，会在当前线程调用AddressResolver.resolve(remoteAddress)，而默认的实现DefaultAddressResolverGroup这个操作是*阻塞*的！
+在调用BootStrap.connect()时，会在当前线程调用AddressResolver.resolve(remoteAddress)，而默认的实现DefaultAddressResolverGroup这个操作是 **阻塞** 的！
 
 DnsAddressResolverGroup实现没看(貌似是4.1新出的功能)，不过应该不会是阻塞的(但是也会在Channel的EventGroup上执行)。构造的时候需要：
 

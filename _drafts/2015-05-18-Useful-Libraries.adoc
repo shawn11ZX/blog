@@ -1,0 +1,34 @@
+---
+layout: post
+title: Useful Java libraries
+shortTitle: Useful Java libraries
+documentationExpanded: false
+comments: true
+postsExpanded: true
+root: ../../../
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: Java 
+
+= Useful libraries
+
+== Embedded Java performance monitoring
+
+* https://github.com/anotheria/moskito[moskito]
+* http://jamonapi.sourceforge.net/[JAMON]
+
+== C++ Networking
+
+*   http://www.jenkinssoftware.com/features.html[Raknet]
+*   http://www.zeroc.com/overview.html[Ice]
+*   http://pocoproject.org/index.html[PocoProject]
+
+== Windows Desktop UI Dev (C++)
+
+* https://dui.codeplex.com/documentation[DirectUI]
+* https://github.com/duilib/duilib[duilib]
+* https://www.zhihu.com/question/22606115[360 客户端是用什么框架做的？]
