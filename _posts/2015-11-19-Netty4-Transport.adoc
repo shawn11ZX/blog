@@ -69,7 +69,32 @@ Executor相关类主要负责（立即或者定时）执行Runnable/Callable；E
 * 查看scheduledTaskQueue头，如果没有任何scheduled task，则从taskQueue中take(无限等待）。
 
 [NOTE] 
-感觉这里有bug，即在无限等待过程中，新加入scheduled tastk queue的task不会被执行
+====
+可能会感觉这里有bug，即在无限等待过程中，新加入scheduled tastk queue的task不会被执行。事实是在向其提交ScheduledTask时，会做以下操作：
+[source,java]
+----
+ <V> ScheduledFuture<V> schedule(final ScheduledFutureTask<V> task) {
+        if (inEventLoop()) { // (1)
+            scheduledTaskQueue().add(task);
+        } else { // (2)
+            execute(new OneTimeTask() {
+                @Override
+                public void run() {
+                    scheduledTaskQueue().add(task);
+                }
+            });
+        }
+
+        return task;
+    }
+----
+
+- 在（1）情况下，下一个循环又会先检查scheduledTaskQueue，所以会被执行
+- 在（2）情况下，线程会先被唤醒执行OneTimeTask，下一个循环还是会去先scheduledTaskQueue
+
+因此是没有bug的
+
+====
 
 * 如果有scheduled task，则检查dueTime。
 ** 如果已经到期，则返回。
