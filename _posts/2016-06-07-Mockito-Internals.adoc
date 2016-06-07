@@ -6,7 +6,7 @@ title: Mockito Internals
 :toc: macro
 :toclevels: 4
 :sectnums:
-:imagesdir: ../images
+:imagesdir: /images
 :hp-tags: Keycloak
 
 == Mockito简介
