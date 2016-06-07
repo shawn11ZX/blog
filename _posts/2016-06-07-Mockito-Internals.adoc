@@ -121,6 +121,8 @@ verify(spy).add("two");
 * When spying real objects and calling real methods on a spy brings side effects
 * Overriding a previous exception-stubbing
 * 但需要对返回值为void的函数stub时
+
+
 .doReturn when (case 1)
 [source,java]
 ----
