@@ -1,0 +1,221 @@
+---
+layout: post
+title: Parsing simple expressions
+shortTitle: Parsing simple expressions
+documentationExpanded: false
+comments: true
+postsExpanded: true
+root: ../../../
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: ../images
+:hp-tags: Keycloak
+
+== Mockito简介
+
+有两种两种Mock的框架^http://blog.rseiler.at/2014/06/explanation-how-proxy-based-mock.html[参考]^：
+
+- proxy based，如Mockito、EasyMock、JMock
+- bytecode manipulation，如PowerMock
+
+proxy base framework天生无法实现以下功能：
+
+*   intercept static method calls
+*   intercept private method calls
+*   intercept final method calls
+*   build a proxy for a final class
+
+=== Mock or Stub
+
+Mockito可以有两种用途：
+
+1. 作为Mock，记录并验证方法是否被调用
+2. 作为Stub，设置：当方法被调用时，返回相应结果（或执行相应函数）
+
+[NOTE]
+The figures below are cited for the book __The Art of Unit Testing: with examples in C# 2nd Edition__
+
+.用法一(mock)
+image:mockito-mock.png[]
+
+[source,java]
+----
+import static org.mockito.Mockito.*;
+
+// mock creation
+List mockedList = mock(List.class);
+
+// using mock object - it does not throw any "unexpected interaction" exception
+mockedList.add("one");
+mockedList.clear();
+
+// selective, explicit, highly readable verification
+verify(mockedList).add("one");
+verify(mockedList).clear();
+----
+
+.用法二(stub)
+image:mockito-stub.png[]
+[source,java]
+----
+// you can mock concrete classes, not only interfaces
+LinkedList mockedList = mock(LinkedList.class);
+
+// stubbing appears before the actual execution
+when(mockedList.get(0)).thenReturn("first");
+
+// the following prints "first"
+System.out.println(mockedList.get(0));
+
+// the following prints "null" because get(999) was not stubbed
+System.out.println(mockedList.get(999));
+----
+
+=== Parital Mock
+
+不管是哪种用法，都可以通过Mockito.mock或Mockit.spy实现：
+
+1. Mockito.mock：给定一个接口，返回一个实现该接口的mock对象(不要与用法中的mock混淆)
+2. Mockito.spy: 给定一个对象或类，返回一个mock对象，该对象将默认的方法调用代理给给定的对象或类的实例
+
+
+
+Mockito.spy实际上创建了一个称为Partial mock的东西
+
+.Mockito.spy例子
+[source,java]
+----
+List list = new LinkedList();
+List spy = spy(list);
+
+//optionally, you can stub out some methods:
+when(spy.size()).thenReturn(100);
+
+//using the spy calls real methods
+spy.add("one");
+spy.add("two");
+
+//prints "one" - the first element of a list
+System.out.println(spy.get(0));
+
+//size() method was stubbed - 100 is printed
+System.out.println(spy.size());
+
+//optionally, you can verify
+verify(spy).add("one");
+verify(spy).add("two");
+----
+
+=== Two flavors  of stubbing
+
+在Stub模式下需要设定返回值时，有两种flavors:
+
+1. when(...).thenReturn(...)
+2. doReturn(...).when()
+
+第一种是推荐的，因为:
+
+* argument typesafe
+* more readable (especially when stubbing consecutive calls).
+
+但是在如下情况下，只能使用第二种
+
+* When spying real objects and calling real methods on a spy brings side effects
+* Overriding a previous exception-stubbing
+* 但需要对返回值为void的函数stub时
+.doReturn when (case 1)
+[source,java]
+----
+List list = new LinkedList();
+List spy = spy(list);
+
+//Impossible: real method is called so spy.get(0) throws IndexOutOfBoundsException (the list is yet empty)
+when(spy.get(0)).thenReturn("foo");
+
+//You have to use doReturn() for stubbing:
+doReturn("foo").when(spy).get(0);
+----
+
+.doReturn when (case 2)
+[source,java]
+----
+when(mock.foo()).thenThrow(new RuntimeException());
+//Impossible: the exception-stubbed foo() method is called so RuntimeException is thrown.
+when(mock.foo()).thenReturn("bar");
+//You have to use doReturn() for stubbing:
+doReturn("bar").when(mock).foo();
+----
+
+.doReturn when (case 3)
+[source,java]
+----
+SomeClass spy = modke(SomeClass.class);
+// won't compile because mock.size() returns void
+when(mock.someVoidMethod()).thenThrows(...)
+----
+
+== 实现
+
+=== 几个关键的概念（内部）
+
+在介绍实现之前，需要先介绍Mockito中的关键概念
+
+.InvocationMatcher
+代表如何匹配一个方法调用（即将Stub和实际调用关联起来），包含了一个Invocation和Matcher列表（对应方法的参数列表）
+
+.Invocation
+可以简单理解为类或者接口的方法，虽然Mockito在其上增加了其他的信息。
+
+.Mather列表
+Mockito使用hamcrest来匹配两个值，主要是匹配函数的调用参数
+
+.Answer
+Stub的行为，即stub被调用时，返回什么值
+
+.InvocationContainer
+一个mock对象有一个InvocationContainer，包含了所有的Stub信息(StubbedInvocationMatcher列表），每个Stub信息包含一个InvocationMatcher和一个Answer**队列**
+
+.MockMaker
+用来创建Mock对象，需要能动态生成类的功能，默认由CglibMockMaker实现。MockMaker创建的Mock对象会把调用代理给MockHandler
+
+=== 流程
+
+Mockito对外的接口通过Mockito类提供，其底层又代理给MockitoCore实现，不管是Mockito.mock还是Mockito.spy方法，都通过MockitoCore.mock实现
+
+MockitoCore.mock需要两个参数
+
+- 被mock的class object或者object
+- MockSettings（MockSettingsImpl），它指定:
+** 默认的answer，如调用spiedInstance的相应方法
+** spiedInstance等信息（在partial mock的情况）
+
+
+MockitoCore.mock的会执行以下操作：
+
+- 通过MockSettingsImpl检查被mock的interface/object是否合法
+- 初始化一个MockHandler，用来处理回调
+- 通过MockMaker创建mock对象，这个MockMaker默认是CglibMockMaker，用户可以自己定义
+- 将setting中的spiedInstance中的field值，拷贝到创建的mock对象
+
+上面提到的创建的MockHandler由好几个InternalMockHandler级联而成完成功能：MockHandlerImpl，NullResultGuardian，InvocationNotifierHandler。其中最重要的是MockHandlerImpl，该类的的Object handle(Invocation)方法会完成以下功能：
+
+- 如果前面调用过doReturn/doAnswer等方法，则记录匹配的InvocationMatcher（如表面怎样的函数调用需要返回前面doReturn制定的返回值），结束
+- 如果前面调用过verify，则执行verify操作，结束
+- 记录本次的InvocationMatcher，生成一个OngoingStubbingImpl给后续的when和thenReturn使用，下一步
+- 如果发现有针对本Invokation的Stub，则调用之（真实调用就是会调用到这里）
+
+
+when函数需要依赖MockHandlerImpl里生存的OngoingStubbingImpl，其流程很简单：返回并清除IOngoingStubbing
+
+thenReturn实际上是IOngoingStubbing的方法，主要功能是记录Stub的Answer部分
+
+
+
+== Reference
+
+- http://blog.rseiler.at/2014/06/explanation-how-proxy-based-mock.html[Explanation how proxy based Mock Frameworks work]
+
+- http://amzn.com/1617290890[The Art of Unit Testing: with examples in C# 2nd Edition]
