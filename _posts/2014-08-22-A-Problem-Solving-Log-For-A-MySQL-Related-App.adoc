@@ -119,14 +119,12 @@ At step 1, we can set **timeout** by using the *connectTimeout* parameter. By de
 The system default TCP connect timeout on Linux system is controlled by the **tcp_syn_retries** variable. which means number of retries before fail. Different OS has different interpretations of this variable according to http://www.sekuda.com/overriding_the_default_linux_kernel_20_second_tcp_socket_connect_timeout[this ariticle]. On centos, the default value is 5, and the total timeout is about 20s.
 
 [source,]
-
 ----
-
-[root@node3 freemarker]# cat /proc/sys/net/ipv4/tcp_syn_retries
+[root@node3 ~/]# cat /proc/sys/net/ipv4/tcp_syn_retries
 
 5
 
-[root@node3 freemarker]# time telnet 8.3.2.1
+[root@node3 ~/]# time telnet 8.3.2.1
 
 Trying 8.3.2.1...
 

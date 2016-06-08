@@ -1,14 +1,13 @@
 ---
 layout: post
-title: Netty4 Transport
-shortTitle: Netty4 Transport
+title: Netty4-Transport Source Code Analysis
 ---
 
 :toc: macro
 :toclevels: 4
 :sectnums:
 :imagesdir: /images
-:hp-tags: TLS, SSL, MAC
+:hp-tags: Netty4, Netty
 :doctypes: book
 
 toc::[]
