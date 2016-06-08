@@ -1,0 +1,292 @@
+---
+
+layout: post
+
+title: A problem solving log for a Mysql related Application
+
+---
+
+
+
+:toc: macro
+
+:toclevels: 4
+
+:sectnums:
+
+:imagesdir: /images
+
+:hp-tags: Mysql
+
+
+
+== The Problem
+
+
+
+In a weekend afternoon, our customer support staff reported that many players can't login to our game.
+
+
+
+The services responsible for ‘login’ processing are called GameLogic, which We deployed several instances per __game zoo__. In these services, there are mainly two threads:
+
+
+
+- Main Thread, which read/write user data by interacting with two different Mysql servers. One of the Mysql server is local, while the other is remotely deployed in another IDC.
+
+- Refresh Thread, which refreshes Mysql Connections once in 10 seconds.
+
+
+
+We manage Mysql connections by ourselves which is obviously no a good idea. But that's not something we want to discuss about today.
+
+
+
+At the time the problem happened, we found the following log entries worth noting:
+
+
+
+- A lot of login requests were queued in Main Thread.
+
+- There were logs about the remote Mysql connection:
+
+[source,]
+
+----
+
+The last packet successfully received from the server was 1,200,245 milliseconds ago.
+
+----
+
+
+
+- The Refresh Thread had been exited hours ago due to some uncaught exception.
+
+
+
+=== The Puzzle
+
+
+
+It's pretty obvious that the problem is caused by the connection to remote Mysql server. Being in another IDC, it's quite common that the network will jitters now and then. Once any of the Mysql connection is blocked, players will have difficulty logining in.
+
+
+
+But one thing that confused me is that why hadn't it happen more often? It can't be that the afternoon was the only time network failed us. 
+
+
+
+So we need to dig deeper.
+
+
+
+== Technical Background
+
+
+
+=== Interaction flow between Mysql Clients and Servers
+
+
+
+Ordinarily, a client interacts with a Mysql sever with the following steps：
+
+
+
+1.  Client connects to Mysql server
+
+2.  Client writes http://dev.mysql.com/doc/internals/en/com-stmt-prepare.html[COM_STMT_PREPARE] and http://dev.mysql.com/doc/internals/en/com-stmt-execute.html[COM_STMT_EXECUTE] commands to server.
+
+3.  Client try to read (and wait for) data from server.
+
+4.  Server process commands, and write data to client
+
+5.  Client successfully reads data
+
+
+
+=== Connection Timeout in Step 1
+
+
+
+At step 1, we can set **timeout** by using the *connectTimeout* parameter. By default, however, this parameter is not setting. So this is a potential blocking location. For example, when the machine on with Mysql Server is deployed is closed, we have to wait for the system default TCP connect timeout before step 1 fails.
+
+
+
+[NOTE]
+
+====
+
+The system default TCP connect timeout on Linux system is controlled by the **tcp_syn_retries** variable. which means number of retries before fail. Different OS has different interpretations of this variable according to http://www.sekuda.com/overriding_the_default_linux_kernel_20_second_tcp_socket_connect_timeout[this ariticle]. On centos, the default value is 5, and the total timeout is about 20s.
+
+[source,]
+
+----
+
+[root@node3 freemarker]# cat /proc/sys/net/ipv4/tcp_syn_retries
+
+5
+
+[root@node3 freemarker]# time telnet 8.3.2.1
+
+Trying 8.3.2.1...
+
+telnet: connect to address 8.3.2.1: Connection timed out
+
+telnet: Unable to connect to remote host: Connection timed out
+
+
+
+real	0m21.152s
+
+user	0m0.001s
+
+sys	0m0.002s
+
+----
+
+====
+
+
+
+=== Read Timeout & Reset in Step 3-5
+
+
+
+If the network is disconnected at step 4, step 5 won't happen until:
+
+
+
+- client receives a RST
+
+- read timeout (controlled by the socketTimeout parameter) is reached
+
+
+
+==== How RST is sent and received
+
+
+
+The RST message is actually a flag in TCP packets. When one TCP peer, say A, sends a TCP packet to another, say B, if the OS of B find there is no such connection it will send a RST back to A.
+
+
+
+When a process is reading from a TCP connection, it depends on the **TCP Keep Alive** mechanism to periodically send keep alive packets to the peer side so as to trigger the RST if the connection is already considered broken on the peer side.
+
+
+
+There is a **tcpKeepAlive** parameter of Mysql Connector we can utilize to enable this feature. By default, this parameter is **ON**.
+
+
+
+At connection level, we can only configure where **TCP Keep Alive** is on or not. However at the OS level, we can also configure the following parameters (which will affect all connections in the OS): 
+
+
+
+*   /proc/sys/net/ipv4/tcp_keepalive_time, which is 1200 on our OS.
+
+*   /proc/sys/net/ipv4/tcp_keepalive_intvl, which is 75
+
+*   /proc/sys/net/ipv4/tcp_keepalive_probes, which 9
+
+
+
+The meaning is: For each TCP connection that have **TCP Keep Alive** on, send Keep Alive packet every 1200 seconds. If it is not replied, resend every 75 seconds until the 9th one after which consider the connection broken.
+
+
+
+== The Root Cause
+
+
+
+=== What really happened today
+
+
+
+The 1200 seconds in log must be the tcp_keepalive_time. 
+
+
+
+After step 3, the network must be broken.
+
+
+
+In Step 4, when server finished processing commands, it tries to write back to the client and failed after net_write_timeout. After then, the server considered connection broken and closed it.
+
+
+
+[NOTE]
+
+The net_write_timeout variable is set by client when calling ExecuteXXX functions provided by the Mysql Connector. The default value of net_write_timeout is equal to https://docs.oracle.com/cd/E17952_01/connector-j-en/connector-j-reference-configuration-properties.html[__netTimeoutForStreamingResults__] property which is 600 seconds. 
+
+
+
+Somewhere after net_write_timeout and before keep alive is triggered, network recovered. So the client keep waiting for read to finish.
+
+
+
+Then keep alive is triggered, which caused the client to send keep alive packets and the server replied RST immediately.
+
+
+
+Finally, after receiving RST, a exception is throw by Mysql connector.
+
+
+
+
+
+=== Why not happen more often?
+
+
+
+The Refresh Thread will periodically send **SELECT NOW** command to server, which involves:
+
+
+
+- Firstly, acquire a PreparedStatement from the connection. It will send http://dev.mysql.com/doc/internals/en/com-stmt-prepare.html[COM_STMT_PREPARE] command to server, which will trigger RST.
+
+
+
+- Secondly, execute ExecuteQuery (which triggers write and read). Note however, Mysql connector executes two  ExecuteQuery in an mutual exclusive way, that is only one thread can in the ExecuteQuery at the same time.
+
+
+
+Refresh Thread with help trigger RST in its first step. If Refresh Thread is blocked in its second step, it won't help anything.
+
+
+
+So if Refresh Thread is not dead, it helps reduce the frequency of problem happening. But since it's dead that, the problem occurred.
+
+
+
+== Conclusion
+
+
+
+Mysql connections between two IDC is vulnerable. The following situations may result in long blocking: 
+
+
+
+-   If connecting to mysql, when the machine on which ysql is deployed is shutdown.
+
+-   If reading from mysql, when the machine is crashed or when network is broken.
+
+-   If writing to mysql, when the machine is crashed or when network is broken.
+
+
+
+So We'd better use different threads to deal with local and remote mysql connections, or when network is poor unexpected pause is unavoidable.
+
+
+
+== References
+
+
+
+* http://frankfan915.iteye.com/blog/1672465[Communications link failure]  
+
+* http://tldp.org/HOWTO/TCP-Keepalive-HOWTO/usingkeepalive.html[Using TCP keepalive under Linux]  
+
+* http://dev.mysql.com/doc/connector-j/en/connector-j-reference-configuration-properties.html[Driver/Datasource Class Names, URL Syntax and Configuration Properties for Connector/J]  
+
+  
+
