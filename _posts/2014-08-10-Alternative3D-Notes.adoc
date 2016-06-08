@@ -1,0 +1,166 @@
+---
+layout: post
+title: Alternative3D Notes
+author: Shawn
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: ../images/a3d
+:hp-tags: Keycloak
+
+=== 向量和矩阵乘法
+
+stage3d和alternative3d都使用列向量：
+ 
+.列向量乘法
+[math,file="matrix_multiply.png",width="30%"]
+--
+\begin{equation}
+    \vec v' = \begin{bmatrix} \vec r0 & \vec r1 & \vec r2 & \vec t \end{bmatrix} * \vec v
+\end{equation}
+--
+
+按照AGAL的文档 http://www.adobe.com/devnet/flashplayer/articles/what-is-agal.html[What is AGAL] ，
+`m44 destination, source1, source2`的作用为：
+
+
+[source, c]
+--
+destination.x = (source1.x * source2[0].x) + (source1.y * source2[0].y) + (source1.z * source2[0].z) + (source1.w * source2[0].w)
+
+destination.y = (source1.x * source2[1].x) + (source1.y * source2[1].y) + (source1.z * source2[1].z) + (source1.w * source2[1].w)
+
+destination.z = (source1.x * source2[2].x) + (source1.y * source2[2].y) + (source1.z * source2[2].z) + (source1.w * source2[2].w)
+
+destination.w = (source1.x * source2[3].x) + (source1.y * source2[3].y) + (source1.z * source2[3].z) + (source1.w * source2[3].w)
+--
+
+因此在上通过`Context3D.setProgramConstantsFromByteArray`传矩阵到显卡时，需要按行来上传。
+
+=== 世界坐标与视角
+
+游戏中第一人称人物的头顶z，左手y，看着x
+人物的视角用Eular坐标表示：yaw表示身体垂直方向的旋转，pitch表示低头，roll为0
+
+==== Eular角对应的矩阵
+.视角
+[width="100%",options="header,footer",width="30%"]
+|====================
+| yaw   | pitch | roll    
+| z     | y     | x     
+|====================
+
+按照我们人的特性，肯定是先yaw，再pitch，再roll
+这三次旋转表示为
+r(yaw) = r(z)
+r(pitch) = r (y)
+r(roll) = r(x)
+
+为了得到一个代表欧拉旋转的矩形，需要把这几个矩阵方向连接得(注意我们是列向量，矩阵从右乘到左）：
+
+[math,file="EulaToMatrix.png"]
+--
+\begin{align}
+    R_{Eula} & = R_{yaw} * R_{pitch} * R_{roll}  \\
+            & = R_{z} * R_{y} * R_{x} \\
+            & = \begin{bmatrix} 
+                c_z *  c_y  &    -s_z * c_x + c_z * s_y * s_x   &  s_x * s_z + c_x * c_z * s_y \\
+                s_z *  c_y  &    -c_z * c_x + s_z * s_y * s_x   &  - c_z * s_x + s_z * s_y * c_x \\
+                -s_y        &    c_y * s_x                      &  c_y * c_x \\
+                \end{bmatrix}
+\end{align}
+--
+
+其中：
+[math,file="EulaToMatrix2.png", width="30%"]
+--
+\begin{align}
+  &  c_z = cos (z) = cos (yaw) \\
+  &  s_z = sin (z) = sin (yaw) \\
+  &  c_y = cos (y) = cos (pitch) \\
+  &  s_y = sin (y) = sin (pitch) \\
+  &  c_x = cos (x) = cos (roll) \\
+  &  s_x = sin (x) = sin (roll) \\
+\end{align}
+--
+
+得：
+
+[math,file="EulaToMatrix3.png"]
+--
+\begin{equation}
+    R_{Eula} 
+            = \begin{bmatrix} 
+                c_{yaw} *  c_{pitch} & -s_{yaw} * c_{roll} + c_{yaw} * s_{pitch} * s_{roll} &  s_{roll} * s_{yaw} + c_{roll} * c_{yaw} * s_{pitch} \\
+                s_{yaw} *  c_{pitch} & -c_{yaw} * c_{roll} + s_{yaw} * s_{pitch} * s_{roll}   &  - c_{yaw} * s_{roll} + s_{yaw} * s_{pitch} * c_{roll} \\
+                -s_{pitch}           & c_{pitch} * s_{roll}                      &  c_{pitch} * c_{roll} \\
+                \end{bmatrix}
+\end{equation}
+--
+
+include::_posts/Math3D.vector3DAngleVectors.as[]
+
+==== 从世界坐标变换到摄像机坐标
+
+首先我们定义四个坐标系：
+
+* C(world)，世界
+* C(camera_translate)，经过位移后摄像机坐标
+* C(camera_translate_rotate)，经过位移，再经过yaw, pitch, roll的摄像机坐标，在此坐标系内，x方向的为可见，z方向为上方
+* C(camera_translate_rotate_flip)，用来投影的坐标，在此坐标内，-z方向的为可见，y为上方
+
+对应于一个顶点P
+
+* P(world) = M(translate) * M(rotate) * M(flip) * P(camera)
+
+
+假设摄像机在世界的位置为pos
+
+[math,file="EulaToMatrixFlip.png", width="30%"]
+--
+\begin{align}
+    M_{flip} & = \begin{bmatrix} \vec x & \vec y & \vec z \end{bmatrix}  \\
+             & = \begin{bmatrix} 
+                0 & 0 & -1 & 0 \\
+                -1 & 0 & 0 & 0 \\ 
+                0 & 1 & 0 & 0 \\  
+                0 & 0 & 0 & 1 
+                \end{bmatrix} \\
+    M_{rotate} & = R_{Eula} \\
+    M_{translate} & = \begin{bmatrix} 
+            1 & 0 & 0 & pos_x \\
+            0 & 1 & 0 & pos_y \\ 
+            0 & 0 & 1 & pos_z \\ 
+            0 & 0 & 0 & 1 
+            \end{bmatrix}  \\
+    M_{cameraToWorld} &= M_{translate} * M_{rotate} * M_{flip} \\
+    M_{worldToCamera}   &= M_{cameraToWorld} ^ {-1} \\
+                        &= ( M_{translate} * M_{rotate} * M_{flip} ) ^ -{1} \\
+                        &=  M_{flip}^ {-1} * M_{rotate}^ {-1}  * M_{translate}^ {-1}  \\
+                        &=  M_{flip}^ {-1} * ( M_{rotate}^T * M_{translate}^ {-1} )  
+\end{align}
+--
+
+
+=== 缩放的实现
+
+缩放有两种实现方式：
+
+* 设置ViewPort
+* 设置ScissorRectangle +　设置投影矩阵
+
+当需要达到UI不缩放，3D缩放的效果时（主要为了提高性能），需要用到后者。方法如下：
+
+. 初始化
+.. 通过`Context3D.configureBackBuffer`设定ViewPort参数
+.. 获得3D的x,y轴缩放比例
+.. 应用x,y缩放比例到投影矩阵
+. 渲染
+.. 设置ScissorRectangle
+.. 将3D部分应用投影变换后，调用drawTriangles
+.. 关闭ScissorRectangle
+.. 将UI按照整个ViewPort渲染
+
+一开始可能以为，只要设置投影矩阵的x,y轴缩放就行了。只这样做的话，的确会使得场景变小，但是ViewPort内的可见物体也更多了。因为原先被视锥裁剪掉的三角形，现在有部分因为又落入了视锥内。加上ScissorRectangle正好抵消的这种作用。
