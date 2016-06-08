@@ -17,7 +17,6 @@ google_site_verification: "5pdyUVtDICUXM0FxuE8lZ1dWLrvWkFN59qi0gvWVJzA"
 permalink: blog/:year/:month/:title
 job.title: "Assistant Professor"
 excerpt_separator: "<!--more-->"
-
 asciidoctor:
   attributes:
     - idseparator=_
