@@ -1,13 +1,22 @@
+**
 ---
+
 layout: post
+
 title: Optimization Of a Http Event Logger
+
 author: Shawn
+
 ---
 
 :toc: macro
+
 :toclevels: 4
+
 :sectnums:
+
 :imagesdir: ../images/a3d
+
 :hp-tags: netty, rest, express
 
 == Introduction
@@ -15,59 +24,91 @@ author: Shawn
 In order to analyze how the players of our game are lost, we have built a system name **lost_logger**. It works as:
 
 1. The system mainly contains the server side and client side. 
+
 2. At the client side, e.g. flash client, whenever player enters into a new step, a new http post request containing the step information is sent to the server
-3. After receiving the request, the server extract infomations from the request, then query/update/write the backend database.
+
+3. After receiving the request, the server extract informations from the request, then query/update/write the backend database.
 
 .Some background about our game
+
 [NOTE]
+
 ====
-- We have handreds of online users at peek hours
-- The game is divided into serveral relatively seperated **zoos**, with each zoo hosted on different **platforms**
+
+- We have hundreds of online users at peak hours
+
+- The game is divided into several relatively separated **zoos**, with each zoo hosted on different **platforms**
+
 - A platform is some place, e.g. a web site, that have plenty of registered players. By advertising our game on platforms, we attract players to play in our game.
-- We need to distinguish statistics of players from different zoos and different playforms.
+
+- We need to distinguish statistics of players from different zoos and different platforms.
+
 ====
 
 The request may contains the following info:
 
 - zoo id
-- playform id
+
+- platform id
+
 - player's username
+
 - step id
+
 - extra step info
 
 == The original Version
- 
+
 The first version of the server contains 3 parts:
- 
+
  - A php frontend that accept request and save the request into a http request queue.
+
  - A c open source program named https://code.google.com/archive/p/httpsqs[httpsqs] that queues http requests
+
  - A java application, that reads from the queue and do the real db query/update/write work.
- 
- 
+
 I decided to write the whole thing for two reasons:
- 
-First of all, I want to minimize the dev operation costs. It's a promising game, which attracted lots of partners from all around the world. So we have to deploy this system now and than. But we only have a few people to do the work, most of which are only part time worker of this task. Compiling a C program that contains a lot of dependencies is a nightmare, especially if you are not familiar with the process. Further more, most of our services are written in Java and PHP (act mostly as adapters), so it's natural to eliminate the dependency to the C program httpsqs.
 
-Secondly, at that time, the performance of the whole system can't meet the increasing presure any more. In fact, the size of the cache file of httpsqs is increasing evreyday, even though the java application is working very hard during the night when the requests at that time is few.
+First of all, I want to minimize the dev operation costs. It's a promising game, which attracted lots of partners from all around the world. So we have to deploy this system now and then. But we only have a few people to do the work, most of which are only part time worker of this task. Compiling a C program that contains a lot of dependencies is a nightmare, especially if you are not familiar with the process. Furthermore, most of our services are written in Java and PHP (act mostly as adapters), so it's natural to eliminate the dependency to the C program httpsqs.
 
-== The first revised Version
+Secondly, at that time, the performance of the whole system can't meet the increasing pressure any more. In fact, the size of the cache file of httpsqs is increasing everyday, even though the java application is working very hard during the night when the requests at that time is few.
+
+== The first revised version
 
 The first revised version combines the above 3 parts in one Java application:
 
 - Embedded Jetty is used to accept http requests
+
 - Java in memory queues are used to queue the requests.
+
 - Google guava is used as in memory cache.
+
 - MyBatis and HikariCP is used to access DB.
 
 I also adapted the https://en.wikipedia.org/wiki/Staged_event-driven_architecture[Staged event-driven architecture] to boost performance. Each zoo will have its own event processing thread chain. Besides, by monitoring the state of queues, I can easily observe the performance of the application.
 
 After went online two problems were found:
 
-1. The memory comsumptionof the app (and queue sizes)  will increasing gradually
-2. The number of open connections will also increasing rapidly
+1. The number of open connections also increasing gradually
 
+2. The queue sizes and thus memory consumption of the app will increasing gradually
 
+I suspect that clients (Browsers and Flash clients) must have not closed the connection after posting requests. So by tuning the read timeout setting of Jetty, the first problem went away.
 
-I suspect that clients (Browsers and Flash clients) must have not closed the connection after posting requests. So by tuning the read timeout setting of Jetty, these two problems are 
+The second problem has something todo with the performance of accessing DB. By increasing the cache size, it is also solved.
 
+== The second revised version
 
+Even though the CPU consumption of the previous version is high, I can live with it as long as it satisfied requirements. A few months later, however, after the online player number doubled it would crash now and then due to OutOfMemoryError. So it's time to optimized it again.
+
+By profiling, I found that Jetty contributed the major part of high CPU. There are a few options for me here:
+
+- tune jetty configuration
+
+- replace jetty with netty
+
+- replace jetty with RestExpress which is a light wrapper over netty.
+
+I went for RestExpress first since it's more flexible, but found it will always compress http response which is CPU consuming and unnecessary. I didn't want to change the source code of RestExpress myself, so after issuing a https://github.com/RestExpress/RestExpress/issues/126[feature request] I selected netty finally.
+
+**
