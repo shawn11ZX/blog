@@ -1,4 +1,3 @@
-**
 ---
 
 layout: post
@@ -21,9 +20,9 @@ author: Shawn
 
 == Introduction
 
-In order to analyze how the players of our game are lost, we have built a system name **lost_logger**. It works as:
+In order to analyze how the players of our game are lost, we have built a server service. It works as:
 
-1. The system mainly contains the server side and client side. 
+1. It's a HTTP server that listens for HTTP posts.
 
 2. At the client side, e.g. flash client, whenever player enters into a new step, a new http post request containing the step information is sent to the server
 
@@ -35,7 +34,7 @@ In order to analyze how the players of our game are lost, we have built a system
 
 ====
 
-- We have hundreds of online users at peak hours
+- We have hundreds of thousands online users at peak hours
 
 - The game is divided into several relatively separated **zoos**, with each zoo hosted on different **platforms**
 
@@ -109,6 +108,15 @@ By profiling, I found that Jetty contributed the major part of high CPU. There a
 
 - replace jetty with RestExpress which is a light wrapper over netty.
 
-I went for RestExpress first since it's more flexible, but found it will always compress http response which is CPU consuming and unnecessary. I didn't want to change the source code of RestExpress myself, so after issuing a https://github.com/RestExpress/RestExpress/issues/126[feature request] I selected netty finally.
+I passed the first option for:
 
-**
+- The server only exposed one http interface publicly, so we didn't really need the complex functions jetty provided.
+
+- I was not sure how much potential I can get out of Jetty, so it's a little risk in terms of investing time on something uncertain while there were better options.
+
+Then I went for RestExpress first since it's more flexible, but found it will always compress http response which is CPU consuming and unnecessary. I didn't want to change the source code of RestExpress myself, so after issuing a https://github.com/RestExpress/RestExpress/issues/126[feature request] I selected netty finally. And the server have been running steadly since then.
+
+== Conclusion
+
+I haven't collected detailed test report of different versions. But one thing for sure is that by replacing jetty with netty solely, the server can resist the doubled pressure now. In fact, for private HTTP service, I still use jetty, since it's more friendly.
+
