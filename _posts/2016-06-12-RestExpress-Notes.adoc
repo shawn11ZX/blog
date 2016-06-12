@@ -6,8 +6,8 @@ title: RestExpress Notes
 :toc: macro
 :toclevels: 4
 :sectnums:
-:imagesdir: ../images
-:hp-tags: Keycloak
+:imagesdir: /images
+:hp-tags: RestExpress
 
 == 线程模型
 
