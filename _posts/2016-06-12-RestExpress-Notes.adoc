@@ -1,0 +1,75 @@
+---
+layout: post
+title: RestExpress Notes
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: ../images
+:hp-tags: Keycloak
+
+== 线程模型
+
+根据项目文档 https://github.com/RestExpress/RestExpress/wiki/Thread-Pool-and-I-O-Flow[Thread Pool and I O Flow]，RestExpress的线程模型如图：
+
+image::https://raw.githubusercontent.com/RestExpress/RestExpress/master/docs/IOFlow.png[]
+
+- Front-End Thread Pool（或者叫I/O Worker Thread Pool）实际上是Netty中ServerBootStrap时用到的boss和worker
+- Back-End Thread Pool（或者叫Executor Thread Pool）是在Pipeline中add ChannelHandler时提供的EventExecutorGroup。当不提供时使用worker处理。
+
+[NOTE]
+====
+在向netty的Pipeline增加ChannelHandler时，每个ChannelHandler都可以指定一个EventExecutorGroup：
+
+- 如果提供了，从Group中选取一个EventLoop绑定到该Handler. 这个ChannelHandler的相关代码，将在这个EventLoop里执行.
+- 如果没提供，则使用Channel register的EventLoop
+
+====
+
+== ChannelHandler栈
+从下（底层）到上（上层），RestExpress给Channel注册的ChannelHandler包括：
+
+- io.netty.handler.ssl.SslHandler.SslHandler（optional）
+- io.netty.handler.codec.http.HttpRequestDecoder.HttpRequestDecoder
+- io.netty.handler.codec.http.HttpContentDecompressor.HttpContentDecompressor 
+- io.netty.handler.codec.http.HttpResponseEncoder.HttpResponseEncoder
+- io.netty.handler.stream.ChunkedWriteHandler.ChunkedWriteHandler
+- io.netty.handler.codec.http.HttpContentCompressor.HttpContentCompressor （optional）
+- io.netty.handler.codec.http.HttpObjectAggregator.HttpObjectAggregator
+- org.restexpress.pipeline.DefaultRequestHandler
+
+除最后一个，其他都是netty自带的。根据项目文档，下图中的蓝色部分，就是在DefaultRequestHandler里触发的：
+
+image::https://camo.githubusercontent.com/9f3082b674133b80164e2687347bf3c5aabd19a8/68747470733a2f2f7261772e6769746875622e636f6d2f52657374457870726573732f52657374457870726573732f6d61737465722f646f63732f526573744578707265737352657175657374526573706f6e73654c6966654379636c652e706e67[]
+
+另外，蓝色的部分在在上文中的Back-End Thread Pool中执行，绿色部分在Front-End Thread Pool中执行。
+
+== Route定义
+
+image:restexpress-route.png[]
+
+[source,java]
+----
+server.uri("/example/route", controller)
+    .action("returnString", HttpMethod.GET)
+    .noSerialization();
+----
+
+- RestExpress利用RouteDeclaration类实现Route的定义，在初始化过程中，用户调用uri或者regex函数向RouteDeclaration插入一系列RouteBuilder
+
+- RestExpress定义了两种RouteBuilder，当调用RestExpress.uri时使用ParameterizedRouteBuilder，当调哦那个RestExpress.regex时，使用RegexRouteBuilder
+
+- 一个HttpMethod和Url（或Url Regex）的组合确定一个Route，每个Route绑定到一个Java对象的一个Method
+
+- RestExpress通过调用RouteDeclaration.createRouteMapping将其中的RouteBuilder列表变成 RouteMapping。RouteMapping能根据给定的地址返回一个Action。Action对应于Route。
+
+- RestExpress的主要HTTP request/reponse处理逻辑在DefalutRequestHandler实现，因此它需要一个RouteResolver来找到对应Route，从而找到对应的对象的Method并调用
+
+- 默认的HTTP method对应的对象的方法如下
+** POST: create(Request, Response)
+** DELTE: delete(Request, Response)
+** PUT: update(Request, Response)
+** GET: read(Request, Response)
+
+- Method方法名配置，但是方法的参数必须都是(Request, Response)。Method的返回值可以使ByteBuf或者实现toString()
