@@ -1,0 +1,117 @@
+---
+
+layout: post
+
+title: A log for implementing a DevOp System
+
+---
+
+:toc: macro
+
+:toclevels: 4
+
+:sectnums:
+
+:imagesdir: /images
+
+:hp-tags: Scala
+
+== Background
+In our company, the main programming language is Java, so all of our servers on the Internet have deployed jdk6 & jdk7. Java is easy to master and less error prone compared to C/C++ which I'm also familiar with. But sometimes I feel that the grammar of Java is a little weak. For example before Java 8, when transforming collections, we will either have to write some referenced-once classes or iterate through collections by using loops.
+
+Then there was a need to optimize the DevOp system for our game. The system is used to: 
+
+- maintain machine database
+
+- maintain service setting (Java, PHP, Static web resource, DB etc)
+
+- deploy new version of services
+
+- upgrade DB schema etc.
+
+For service deployment, there are mainly four steps:
+
+- upload service package to dest machine, which is very bandwidth consuming as the size of packages ranges from 5M to 500M
+
+- stop services machines (each machine can have several types of services with each have multiple instances)
+
+- install package and transfer configuration
+
+- start services on machines
+
+It is originally implemented with PHP and can able to manage about 100 machines and 1000 services. Due to its design limitation, the deploying process would takes to long, say more than 3 hours, when number of machines and services increase beyond 200 and 2000 respectively. 
+
+== Refactor or Reimplement
+
+After some discussion, we decided to re-implement it with java or some JVM language. The reasons is as following:
+
+- Its code is too lousy to refactor. In fact, lots of code are duplicated.
+
+- We want to use a static typing programming language that can ease future refactor progress. There might some tools (e.g. Facebook HipHop) for PHP we can resort to to improve the situation, but as a small team whose main members are Java programmers, we don't wish to introduce extra complexity into team.
+
+- Some functions are more easy to implement in Java, for example background tasks.
+
+- We have confidence that we can successfully reimplement it, but not so much of refactoring it.
+
+- It's an internal system. So we can make brave decisions without considering much about backward compatibility.
+
+== The architecture
+
+We first encounter scala while investigating RPC frameworks during which we found twitter finagle (implemented in Scala) is quite impressive. After reading so articles introducing Scala, we decide we should at least try this language to see if it's useful for us.
+
+We chose a architecture as following
+
+- Play! framework 2 as the main framework
+
+- We didn't use Twirl template engine but instead chose AngularJS+Json way. The later allow frontend/backend developers develop concurrently.
+
+- Using Slick to access database
+
+- Using H2/Mysql as dev/prod time database respectives
+
+- Using Akka to implement background tasks, to be more precise, service status monitoring and service deployment
+
+- We at first write user/group management module by our own, but later adapted Keycloak as SSO since it's much more flexible. 
+
+== Learning
+
+I have learned a little bit of Scala while reading source code of finagle. Then I read the book __Programming in Scala__ and some online manuals. Still, I found there are so many syntax tricks that can easily surprise me.
+
+The document of Play! framework is quite friendly actually, so I don't met much difficulty at first. But as soon as I want something not mentioned in the manual or something complex, I found I need to refer to source code for help. Two examples are:
+
+- Using the build-in form handling library provided by Play! framework to handle of dynamic form that contains dynamic fields
+
+- Using slick to accomplish some complex SQL queries.
+
+AngularJS is also easy to grape at beginning, but need to read sources of libraries to have deeper understanding it's spirits.
+
+There is another challenge for me: living in China, behind the https://en.wikipedia.org/wiki/Great_Firewall[GFW], presented a lot trouble to me while setting up building envrionment for SBT, NPM and Bower.
+
+== The Outcome
+
+Fortunately The outcome is quite pleasant, the system eased us a lot pain managing more than 1000 machines and more than 6000 services. 
+
+- By using multiple proxy nodes, we can send installation packages (size ranged from 5M to 500M) to destination machine much faster than before.
+
+- By enabling concurrent deployment, deploy time dramatically dropped.
+
+- By adding query friendly logs, it's much easier to trace history and fix errors.
+
+- By allowing adding new services via configurations, all of our services are now under its management which greatly reduced configuration errors.
+
+Below is a screenshot of the system: 
+
+image::optool-screenshot.png[]
+
+== Conclusion
+
+After the project, **I guess scala is not suitable for us or at least not suitable for projects like this**.
+
+My major concern is maintainability. One thing those whose argue that Scala is better than Java is that we can achieve the same function with far less source code when using Scala. But I also see this as a weakness. In fact, more than often, our team members complained that the context of code was too little for someone new to read the source code written by others. 
+
+Another reason is that Scala permit domain specific language, which may be attractive at first. But as soon as we want adapt new libraries that introduce some 'weird' grammar, we may shout WTF. It's like besides referencing API doc, we also have to learn a new language which usually is not so well defined.
+
+The finally complain is about reactive programming. The Play! framework 2 recommend us to use this technique which is also fancy at first. Then when you need to debug or try to figure out the reason of some error log, you would soon be frustrated.
+
+One may argue that all the above drawback can be avoided by some programming standard/convention, but the truth is that you can stop yourself or your team from making bad decision but there is little you can do to prevent other people, say library writers. Nowadays, it would be unreasonable not to utilize open source projects.
+

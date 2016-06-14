@@ -14,7 +14,7 @@ root: ../../../
 :imagesdir: /images
 :hp-tags: Keycloak
 
-= Keycloak Application
+= Keycloak as SSO 
 
 我们公司对内有应用后台、运维，运营等应用需要需要内部人员登陆后使用。
 同时我们的这些应用在各个国家都有部署，并且需要给相应的合作方创建账号。

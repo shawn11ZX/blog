@@ -72,4 +72,4 @@ server.uri("/example/route", controller)
 ** PUT: update(Request, Response)
 ** GET: read(Request, Response)
 
-- Method方法名配置，但是方法的参数必须都是(Request, Response)。Method的返回值可以使ByteBuf或者实现toString()
+- Method方法名配置，但是方法的参数必须都是(Request, Response)。Method的返回值可以使ByteBuf或者实现toString()，这个返回值昨晚Response的body
