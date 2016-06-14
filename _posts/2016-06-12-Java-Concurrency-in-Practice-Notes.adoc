@@ -1,0 +1,124 @@
+---
+layout: post
+title: Java Concurrency in Practice Notes
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: Java Cconcurrency
+
+== Chapter 1 Introduction
+
+多线程带来的风险:
+
+- Saftey Hazards，如race condition
+- Liveness Hazards，如deadlock，starvation和livelock
+- Performance Hazards，如Context Switch频繁、过度使用同步导致cache经常无效
+
+== Chapter 2 Thread Safety
+
+.解决多线程同时访问mutable state时的三种方法：
+
+- 改成immutable
+- 不共享mutable state
+- 使用同步
+
+.什么是Thread safe class
+
+在多线程访问情况下，能正确执行
+
+- 不依赖访问线程的scheduling和interleaving
+- 不需要访问线程增加额外同步机制
+
+.线程安全的
+- Stateless对象
+- Immutable objects
+
+
+
+.常见的race condition:
+
+- check-then-act
+- read-modify-write
+
+.synchorinzed关键字
+
+- reentrant
+- 影响performane，如同一时间只能一个线程进入、清楚Cache
+
+== Chapter 3 Sharing Objects
+
+.Vsisibility
+在未同步情况下，compiler/processor/runtime会调整代码的执行顺序，从而导致：
+- 一个线程对变量A的修改，在另外一个线程不可见
+- 一个线程按顺序修改变量A、B，在另外一个线程看到B先修改等
+
+.Out-of-thin-air safety
+能确保所有变量被原子的赋值，除了non-volatile的64位数值变量
+
+.Locking的作用：
+- mutual exclusion
+- memory visibility
+
+
+.volatile和locking的区别：
+
+- locking保证visiblilty和automicity
+- volatile只保证visiblilty
+
+.volatile的使用前提：
+
+- write不依赖当前值，如设置flag就是，但increment就不是
+- 变量没和其他变量一起参与到invariants
+
+.什么是Publish
+- method返回reference，那被返回的object就被published
+- public static method引用instance的变量
+- 能从published object以任何形式访问的的object也同时被published
+- 将object传递给alien method
+
+.什么是alien methods
+- 其他类的methods
+- overrideable methods (非final非private）
+
+.Escape
+一个对象在不该被publish时publish了
+
+.Safe construction原则
+不要让this在构造函数中escape，典型的反面例子有：
+
+- 在构造函数中，启动（而不是创建）thread
+- 在构造函数中调用overrideable instance method
+
+.Thread confinement
+保证data只在一个线程被访问的技术叫做Thread confinement。
+有三种方法：
+
+- Ad-hoc thread confinement。靠实现和调用者约定
+- Stack confinement
+- ThreadLocal
+
+.什么是immutable object
+- state在构造后不改变
+－所有字段是final
+- properly constructed（即在构造函数中没有escape this）
+
+Java Memory Model保证immutable object的state在构造后对其他线程可见
+
+.安全的publish一个对象
+为了安全publish一个对象，对对象的reference已经对象内部的state都要对其他线程可见。
+
+如何safe publish一个properly constructed object
+- 类的static initalizer中初始化reference
+- 用volitle或AtomicREference引用
+- 用final
+- lock
+
+.Collection的线程安全
+从一个thread-safe的collection中存取object是保证可见的，这包括：
+
+- Hashtable, synchronizedMap, ConcurrentMap
+- Vectork, CopyOnWriteArrayList, CopyOnWriteArraySet, synchronizedList, SynchronizedSet
+- BlockingQueue, ConcurrentLinedQueue
