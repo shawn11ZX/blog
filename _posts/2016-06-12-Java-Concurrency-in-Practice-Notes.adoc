@@ -8,7 +8,7 @@ title: Java Concurrency in Practice Notes
 :toc: macro
 :toclevels: 4
 :sectnums:
-:imagesdir: ../images
+:imagesdir: /images
 :hp-tags: Java Cconcurrency
  
 toc::[]
@@ -264,4 +264,206 @@ The principal threat to scalability in concurrent applications is the exclusive 
 - 多线程时，前者Through put能随线程数平稳增长，后者不会
 - 容量很小时，前者更费内存
 
+image::concurrency-concurrentmap.png[]
 
+== Advanced Topics
+
+=== Chapter 13 Explicit Locks
+
+.intrinsic lock和ReentrantLock的区别
+- 后者增加try
+- 后者增加interrupt
+- 后者增加fairness功能
+- 前者只能是block方式使用，后者可以灵活lock和unlock（但是只能当前线程unlock）
+- Java 5前者性能差很多，Java 6前者性能稍微差一点
+
+.fair和nonfair
+- fair：先rqurest lock的先acquire
+- nonfair：barging，可以插队
+
+性能nonfair的好很多：
+
+image::concurrency-fair.png[]
+
+
+.fair性能差的原因
+
+被suspended线程（因为等待lock）后被resume（因为获取lock成功），到运行（因为cpu调度到他），有很大延迟。
+
+Let’s say thread A holds a lock and thread B asks for that lock. Since the lock is busy, B is suspended. When A releases the lock, B is resumed so it can try again. In the meantime, though, if thread C requests the lock, there is a good chance that C can acquire the lock, use it, and release it before B even finishes waking up. In this case, everyone wins:  B gets the lock no later than it otherwise would have, C gets it much earlier, and throughput is improved.  
+
+.read/write lock
+
+Thoughput比renentrent lock稍微好一点，但是还是没有ConcurrentHashMap好
+
+=== Chapter 15 Atomic Variables and Nonblocking Synchronization
+
+.Compare and Set (CAS)
+AtomicReference.compareAndSet既保证Atomicity也保证Visibility
+  
+CAS可以用来实现non-blocking算法
+
+.ABA问题
+
+如在实现Linked List时，如果维护Node Pool，很容易有这个问题。
+
+CAS只能解决: 变量V的值是否在我上次观察他之后**变成其他不一样的值**？
+而有时候我们要的保证是：变量V的值是否在我上次观察他之后**改变过（跟现在可能还是一样）**？
+
+.ABA解决办法
+- AtomicStampedReference：updates an object reference-integer pair  
+- AtomicMarkableReference：object reference-boolean pair  
+  
+  
+=== Chapter 16 Java Memory Model
+
+.Memory Model
+定义在什么条件下，一个线程能**看到**一个变量的修改（可能来自本线程，也可以来自其他线程）
+
+.Architecture Memory Model
+An architecture’s memory model tells programs what **guarantees** they can expect from the memory system, and specifies the **special instructions** required (called memory barriers or fences) to get the additional memory coordination guarantees required when sharing data  
+
+.Sequential consisitency
+- 操作只有一种执行顺序
+- 任何读操作都能看见在他之前发生的写操作的结果
+
+.Reordering发生的原因
+- 由于编译器或流水线等，导致指令执行顺序改变
+- 由于cache等，导致写操作的结果可见时间变化
+
+.Happens-Before(HB)关系
+要保证B线程看到A线程的结果，需要A happens-before B
+
+image::concurrency-happens-before.png[]
+
+.data race
+数据被多个线程读写，但是读和写操作，没有根据happens-before关系排序。
+如，在指令指令时间上，顺序是这样的：
+
+1. A线程写变量V
+2. B线程读变量V
+  
+但是如果没有机制保证A写变量V happens-before B读变量B，则视为有data race
+
+
+.correctly synchronized program  
+一个没有data race的program，所有操作按固定的（而不是会随机变化的）顺序执行。
+
+.java定义的happens-before(HB) 关系
+
+下面的**先发生**指的是在指令的执行顺序
+
+- Program order rule：同线程内，先发生的action HB 后执行的action
+- Monitor lock rule：对于同一个lock，先发生的unlock调用 HB 后发生的lock调用
+- Volatile variable rule：对同一个volatile变量，先发生的写 HB 后发生的读
+- Thread start rule：对于一个线程对象，对Thread.start的调用 HB 线程内任一指令的执行
+- Thread termination rule：线程内任一指令的执行HB对该线程的Thread.join或Thread.isAlive()（仅当返回false时成立）
+- Interruption rule：对一个线程的interrupt操作HB线程检查到该interrupt（如收到InterruptedException或isInterrupted返回true）
+- Finalizer rule：对象构造完成 HB finalizer开始
+- Transitivity. 如果A HB B且B HB C，则A HB C  
+ 
+.piggybacking  
+根据happens-before的特性，A happens-before B实际上表示了所有A之前（包括A）的action对所有B之后（包括B）的操作可见。
+
+因此可以使用piggybacking的方式，把多个happens-before关系合并成一个
+
+.Initialization safety
+对于properly constructed objects，所有线程能正确的看到他的final字段，已经通过该字段所有到达的所有变量。
+(such as the elements of a final array or the contents of a HashMap referenced by a final field) 
+  
+
+==== Lazy initilization singleton的实现方法及问题：
+
+.方法1
+
+[source,java]
+----
+@NotThreadSafe
+public class UnsafeLazyInitialization {
+	private static Resource resource;
+	public static Resource getInstance() {
+		if (resource == null)
+			resource = new Resource(); // unsafe publication
+		return resource;
+	}
+}
+----
+
+问题:
+- 可能多个resource
+- 因为没有happens-before保证，对resource指针的赋值，可能对其他线程不可见
+- 因为没有happens-before保证，对Resource构造函数的调用，可能对其他线程不可见（从而导致状态非法）
+
+.方法2
+[source,java]
+----
+@ThreadSafe
+public class SafeLazyInitialization {
+	private static Resource resource;
+	public synchronized static Resource getInstance() {
+		if (resource == null)
+			resource = new Resource();
+		return resource;
+	}
+}
+----
+
+问题：性能，每次调用getInstance都需要获取lock
+
+.方法3
+[source, java]
+----
+@ThreadSafe
+public class EagerInitialization {
+	private static Resource resource = new Resource();
+	public static Resource getResource() { return resource; }
+}
+
+----
+
+问题：没有可见性问题，但是没有lazy功能
+
+.Lazy initialization Holder class
+[source,java]
+----
+@ThreadSafe
+public class ResourceFactory {
+	private static class ResourceHolder {
+		public static Resource resource = new Resource();
+	}
+	public static Resource getResource() {
+		return ResourceHolder.resource;
+	}
+}
+
+----
+
+问题：没有问题
+
+.Double-Checked-Locking antipattern
+[source,java]
+----
+@NotThreadSafe
+public class DoubleCheckedLocking {
+	private static Resource resource;
+	public static Resource getInstance() {
+		if (resource == null) { // (1)
+			synchronized (DoubleCheckedLocking.class) { // (2)
+				if (resource == null)
+					resource = new Resource();
+			}
+			// (3)
+		}
+		return resource;
+	}
+}
+----
+问题：下列顺序会导致问题
+
+1. 线程A进入语句(2)，并执行到(3)，对线程A来说resource指针已经初始化，其指向的对象的构造函数已经调用
+2. 线程B执行到(1)，因为B和A之间没有happens-before关系，所以可能出现：第一步的resource的赋值对B可见，但对Resource构造函数的调用对B不可见
+
+将resource设置为volatile能解决这个问题。但是仍然不如Lazy initialization Holder class性能高和易理解
+
+
+  
