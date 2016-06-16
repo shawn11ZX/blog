@@ -465,5 +465,7 @@ public class DoubleCheckedLocking {
 
 将resource设置为volatile能解决这个问题。但是仍然不如Lazy initialization Holder class性能高和易理解
 
-
+== Reference and Recommandation
+- http://tutorials.jenkov.com/java-concurrency/java-memory-model.html[Java Memory Model]
+- http://jcip.net/[Java Concurrency in Practice]
   
