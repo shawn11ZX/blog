@@ -49,16 +49,17 @@ title: Java Concurrency in Practice Notes
 .synchorinzed关键字
 
 - reentrant
-- 影响performane，如同一时间只能一个线程进入、清楚Cache
+- 影响performane，如同一时间只能一个线程进入、清除Cache
 
 == Chapter 3 Sharing Objects
 
 .Vsisibility
 在未同步情况下，compiler/processor/runtime会调整代码的执行顺序，从而导致：
+
 - 一个线程对变量A的修改，在另外一个线程不可见
 - 一个线程按顺序修改变量A、B，在另外一个线程看到B先修改等
 
-.Out-of-thin-air safety
+.Java的Out-of-thin-air safety机制
 能确保所有变量被原子的赋值，除了non-volatile的64位数值变量
 
 .Locking的作用：
@@ -76,18 +77,22 @@ title: Java Concurrency in Practice Notes
 - write不依赖当前值，如设置flag就是，但increment就不是
 - 变量没和其他变量一起参与到invariants
 
-.什么是Publish
-- method返回reference，那被返回的object就被published
-- public static method引用instance的变量
-- 能从published object以任何形式访问的的object也同时被published
-- 将object传递给alien method
+.什么是publishing an object
+
+Publishing an object means making it available to code outside of its current scope,  
+- storing a reference to it where other code can find it （如用public的自动去引用）
+- returning it from a nonprivate method
+- passing it to alien method
 
 .什么是alien methods
 - 其他类的methods
 - overrideable methods (非final非private）
 
 .Escape
-一个对象在不该被publish时publish了
+一个对象在不该被publish时publish了: 
+
+- 违反了设计初衷
+- 不安全的publish
 
 .Safe construction原则
 不要让this在构造函数中escape，典型的反面例子有：
@@ -111,7 +116,11 @@ title: Java Concurrency in Practice Notes
 Java Memory Model保证immutable object的state在构造后对其他线程可见
 
 .安全的publish一个对象
-为了安全publish一个对象，对对象的reference已经对象内部的state都要对其他线程可见。
+
+为了安全publish一个对象，以下信息需要对其他线程可见：
+
+- 指向对象的reference
+- 对象内部的state
 
 如何safe publish一个properly constructed object
 - 类的static initalizer中初始化reference
@@ -226,7 +235,7 @@ The principal threat to scalability in concurrent applications is the exclusive 
 - 包含uncontended时的cost
 - 两次上下文切换
 
-.影响lock contection的因素，已经解决方法
+.影响lock contection的因素，以及解决方法
 
 因素：
 
