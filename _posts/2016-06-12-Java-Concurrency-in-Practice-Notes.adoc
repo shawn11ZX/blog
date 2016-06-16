@@ -6,7 +6,7 @@ title: Java Concurrency in Practice Notes
 :toc: macro
 :toclevels: 4
 :sectnums:
-:imagesdir: /images
+:imagesdir: ../images
 :hp-tags: Java Cconcurrency
 
 == Chapter 1 Introduction
@@ -14,7 +14,10 @@ title: Java Concurrency in Practice Notes
 多线程带来的风险:
 
 - Saftey Hazards，如race condition
-- Liveness Hazards，如deadlock，starvation和livelock
+- Liveness Hazards，如
+** deadlock：A hold L1 wait for L2, B hold L2 wait for L1
+** starvation: perpetually denied access to resources it needs in order to make progress
+** livelock: not blocking but can't make progress
 - Performance Hazards，如Context Switch频繁、过度使用同步导致cache经常无效
 
 == Chapter 2 Thread Safety
@@ -60,7 +63,7 @@ title: Java Concurrency in Practice Notes
 
 .Locking的作用：
 - mutual exclusion
-- memory visibility
+- memory visibility 
 
 
 .volatile和locking的区别：
@@ -122,3 +125,125 @@ Java Memory Model保证immutable object的state在构造后对其他线程可见
 - Hashtable, synchronizedMap, ConcurrentMap
 - Vectork, CopyOnWriteArrayList, CopyOnWriteArraySet, synchronizedList, SynchronizedSet
 - BlockingQueue, ConcurrentLinedQueue
+
+
+== Chapter 7 Task cancellation
+
+.线程结束方法
+- owner线程设置flag，target线程根据flag状态结束。这种方法不适用于线程会blocking等待事件的情况
+- owner线程调用Thread.interrupt()，target线程检查Thread.isInterrupted()且捕获InterruptException
+
+.线程interrupt相关方法
+
+- Thread.interrupt()会设置目标线程interrupted flag
+- Thread.interrupted()清除 interrupted flag
+- Thread.isInterrupted()返回interrupted flag
+- Interruptable Blocking的操作如Thread.sleep()，如果在调用之前interrupted flag为true，也会抛InterruptedException
+
+如下面的代码：
+[source,java]
+----
+public class TestInterrupt {
+
+    public static void main(String[] args) {
+        Thread t = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                long start = System.currentTimeMillis();
+                System.out.println("start sleep...");
+                try {
+                    Thread.currentThread().interrupt();
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                long end = System.currentTimeMillis();
+                System.out.println("end sleep in ms: " + (end - start));
+            }
+        });
+
+        t.start();
+        try {
+            Thread.sleep(10000000);
+        } catch (Exception exception) {
+            System.out.println(exception);
+        }
+    }
+
+}
+
+----
+
+输出：
+
+[source,]
+----
+start sleep...
+java.lang.InterruptedException: sleep interrupted
+	at java.lang.Thread.sleep(Native Method)
+	at TestInterrupt$1.run(TestInterrupt.java:13)
+	at java.lang.Thread.run(Unknown Source)
+end sleep in ms: 1
+----
+
+== Chapter 8 Applying Thread Pools
+
+.计算Thread线程的个数
+
+[math,file="ThreadPoolSize.png"]
+--
+\begin{align}
+    N_{cpu} &= {NumberOfCPU}  \\
+    U_{cpu} &= {TargetCPUutilization: [0-1]}   \\
+    W/C &= {Ratio Of Wait Time To Compute Time}  \\
+    N_{thread} &= N_{cpu} * U_{cpu} * (1 + W/C)
+\end{align}
+--
+
+例如：
+
+- 当CPU利用率为100%，Wait Time和Compute Time相同时，线程数为CPU*2
+- 当CPU利用率为100%，W/C为2时，线程数为CPU*3
+
+
+== Chapter 11 Performance and Scalability
+
+.多线程对scalability的影响
+The principal threat to scalability in concurrent applications is the exclusive resource lock.  
+
+.synchornization两种结果
+- uncontended如lock现在没有人占用
+- contended如lock现在被人占用
+
+.uncontended时的cost
+
+- 因visibility需要用到memory barrier，会带来：flush/invalidate caches, flush hardware write buffer, stall execution pipeline, inhibit compiler optimiztion
+- 大概需要20-250 clock cycle
+- Compiler或者JVM可能可以优化部分：escape analysis, lock elision（不对local的lock）, lock coarsening（合并lock）
+
+.contented时的cost
+- 包含uncontended时的cost
+- 两次上下文切换
+
+.影响lock contection的因素，已经解决方法
+
+因素：
+
+- 请求lock的频率
+- lock持有的时间
+
+解决方法：
+
+- 减少频率：lock splitting（不同资源用不同的锁），lock striping（partition locking on a variable sized set of independent objects，如ConcurrentHashmap）
+- 降低持有时间：narrow lock scope，
+- 用其他机制代替exlusive lock: Concurrent Collection, Read/Write Lock, Immutable objects, Atomic Variables
+
+.ConcurrentMap的大概实现方式
+- 将buckets分组，每组用不同的lock，pub/del只需要lock相应的bucket的锁
+- 计算size时，每组buckets有个counter（每次pub/del都会更新），总的size根据各buckets的counter动态计算
+
+.ConcurrentHashMap和synchronized HashMap
+- 单线程时，前者也更快
+- 多线程时，前者Through put能随线程数平稳增长，后者不会
+- 容量很小时，前者更费内存
