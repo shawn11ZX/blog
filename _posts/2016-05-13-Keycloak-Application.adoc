@@ -14,12 +14,14 @@ root: ../../../
 :imagesdir: /images
 :hp-tags: Keycloak
 
-= Keycloak as SSO 
+toc::[]
+
+
+
+== Keycloak对我们的作用
 
 我们公司对内有应用后台、运维，运营等应用需要需要内部人员登陆后使用。
 同时我们的这些应用在各个国家都有部署，并且需要给相应的合作方创建账号。
-
-== Keycloak对我们的作用
 
 * 免去自己编写认证，用户管理，群组管理等功能
 * 实现SSO
@@ -38,7 +40,6 @@ root: ../../../
 ** 应用到keycloak也使用https，但是不做证书的合法性认证。因为证书有有效期，失效后会导致需要重新更新应用的trust-store，很麻烦
 * 网站对外是http的，对内必须是用https，否则无法使用keycloak的https。原因如下下面的代码：
 
-== 相关代码
 .OAuthRequestAuthenticator
 [source,java]
 ----

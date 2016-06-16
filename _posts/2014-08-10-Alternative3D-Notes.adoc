@@ -10,6 +10,8 @@ author: Shawn
 :imagesdir: ../images/a3d
 :hp-tags: Keycloak
 
+toc::[]
+
 === 向量和矩阵乘法
 
 stage3d和alternative3d都使用列向量：

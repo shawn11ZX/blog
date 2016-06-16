@@ -14,6 +14,8 @@ root: ../../../
 :imagesdir: /images
 :hp-tags: Keycloak
 
+toc::[]
+
 == 方法
 
 Wikipedia上介绍了 https://en.wikipedia.org/wiki/Operator-precedence_parser[三种]Bottom Up Parser用来解析表达式，分别是：

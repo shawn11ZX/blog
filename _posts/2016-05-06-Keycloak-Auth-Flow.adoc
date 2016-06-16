@@ -14,6 +14,8 @@ root: ../../../
 :imagesdir: /images
 :hp-tags: Keycloak
 
+toc::[]
+
 = Keycloak  Authenciaton Flow 
 
 image::keycloak.png[]

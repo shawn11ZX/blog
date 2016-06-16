@@ -3,11 +3,15 @@ layout: post
 title: Java Concurrency in Practice Notes
 ---
 
+
+
 :toc: macro
 :toclevels: 4
 :sectnums:
 :imagesdir: ../images
 :hp-tags: Java Cconcurrency
+ 
+toc::[]
 
 == Chapter 1 Introduction
 
@@ -20,7 +24,9 @@ title: Java Concurrency in Practice Notes
 ** livelock: not blocking but can't make progress
 - Performance Hazards，如Context Switch频繁、过度使用同步导致cache经常无效
 
-== Chapter 2 Thread Safety
+== Fundimentals
+
+=== Chapter 2 Thread Safety
 
 .解决多线程同时访问mutable state时的三种方法：
 
@@ -47,11 +53,11 @@ title: Java Concurrency in Practice Notes
 - read-modify-write
 
 .synchorinzed关键字
-
+- 又叫intrinsic locks or monitor locks
 - reentrant
 - 影响performane，如同一时间只能一个线程进入、清除Cache
 
-== Chapter 3 Sharing Objects
+=== Chapter 3 Sharing Objects
 
 .Vsisibility
 在未同步情况下，compiler/processor/runtime会调整代码的执行顺序，从而导致：
@@ -135,8 +141,8 @@ Java Memory Model保证immutable object的state在构造后对其他线程可见
 - Vectork, CopyOnWriteArrayList, CopyOnWriteArraySet, synchronizedList, SynchronizedSet
 - BlockingQueue, ConcurrentLinedQueue
 
-
-== Chapter 7 Task cancellation
+== Structuring Concurrent Applicatiosn
+=== Chapter 7 Task cancellation
 
 .线程结束方法
 - owner线程设置flag，target线程根据flag状态结束。这种方法不适用于线程会blocking等待事件的情况
@@ -196,7 +202,7 @@ java.lang.InterruptedException: sleep interrupted
 end sleep in ms: 1
 ----
 
-== Chapter 8 Applying Thread Pools
+=== Chapter 8 Applying Thread Pools
 
 .计算Thread线程的个数
 
@@ -215,8 +221,9 @@ end sleep in ms: 1
 - 当CPU利用率为100%，Wait Time和Compute Time相同时，线程数为CPU*2
 - 当CPU利用率为100%，W/C为2时，线程数为CPU*3
 
+== Liveness, Performane, and Testing
 
-== Chapter 11 Performance and Scalability
+=== Chapter 11 Performance and Scalability
 
 .多线程对scalability的影响
 The principal threat to scalability in concurrent applications is the exclusive resource lock.  
@@ -256,3 +263,5 @@ The principal threat to scalability in concurrent applications is the exclusive 
 - 单线程时，前者也更快
 - 多线程时，前者Through put能随线程数平稳增长，后者不会
 - 容量很小时，前者更费内存
+
+

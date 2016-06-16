@@ -19,6 +19,7 @@ title: A problem solving log for a Mysql related Application
 :hp-tags: Mysql
 
 
+toc::[]
 
 == The Problem
 

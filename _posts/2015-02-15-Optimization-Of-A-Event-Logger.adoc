@@ -18,6 +18,8 @@ author: Shawn
 
 :hp-tags: netty, rest, express
 
+toc::[]
+
 == Introduction
 
 In order to analyze how the players of our game are lost, we have built a server service. It works as:

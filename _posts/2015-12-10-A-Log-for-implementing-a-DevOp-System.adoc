@@ -16,6 +16,8 @@ title: A log for implementing a DevOp System
 
 :hp-tags: Scala
 
+toc::[]
+
 == Background
 In our company, the main programming language is Java, so all of our servers on the Internet have deployed jdk6 & jdk7. Java is easy to master and less error prone compared to C/C++ which I'm also familiar with. But sometimes I feel that the grammar of Java is a little weak. For example before Java 8, when transforming collections, we will either have to write some referenced-once classes or iterate through collections by using loops.
 

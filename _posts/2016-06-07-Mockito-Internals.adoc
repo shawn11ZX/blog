@@ -9,6 +9,8 @@ title: Mockito Internals
 :imagesdir: /images
 :hp-tags: Keycloak
 
+toc::[]
+
 == Mockito简介
 
 有两种两种Mock的框架^http://blog.rseiler.at/2014/06/explanation-how-proxy-based-mock.html[参考]^：

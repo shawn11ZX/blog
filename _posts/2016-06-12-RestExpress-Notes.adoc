@@ -9,6 +9,8 @@ title: RestExpress Notes
 :imagesdir: /images
 :hp-tags: RestExpress
 
+toc::[]
+
 == 线程模型
 
 根据项目文档 https://github.com/RestExpress/RestExpress/wiki/Thread-Pool-and-I-O-Flow[Thread Pool and I O Flow]，RestExpress的线程模型如图：
