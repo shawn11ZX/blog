@@ -9,7 +9,6 @@ title: Keycloak Installation Guide
 :sectnums:
 :imagesdir: /images
 
-= Keycloak installation guide
 
 toc::[]
 

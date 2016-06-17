@@ -1,6 +1,6 @@
 ---
 layout: post
-title: A Log for optimizing a Http Event Logger
+title: A Log for Optimizing a Http Event Logger
 ---
 
 :toc: macro

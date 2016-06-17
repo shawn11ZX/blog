@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Application of Keycloak Server
+title: Our Applications of Keycloak Server
 ---
 
 :toc: macro

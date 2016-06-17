@@ -9,9 +9,6 @@ title: Netty4 Recycler Code Reading Notes
 :imagesdir: /images
 :hp-tags: TLS, SSL, MAC
 
-= Netty4 Recycler implementation
-
-
 toc::[]
 
 == 接口

@@ -9,9 +9,6 @@ title: Jekyll+Asciidoc Installation Guide
 :imagesdir: /images
 :hp-tags: TLS, SSL, MAC
 
-= Jekyll Asciidoc installation
-
-
 toc::[]
 
 == 背景
