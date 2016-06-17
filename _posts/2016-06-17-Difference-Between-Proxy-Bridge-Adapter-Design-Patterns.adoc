@@ -1,0 +1,42 @@
+---
+layout: post
+title: Difference between Proxy, Bridge and Adapter Design Patterns
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: Design pattern, Proxy, Bridge, Adapter
+
+
+.Adapater
+image:http://www.dofactory.com/images/diagrams/net/adapter.gif[]
+
+- 目的：为了解决接口的不兼容问题
+- 图解：Client需要Target接口，但是现有的库只有Adaptee接口。于是让Adapter实现Target，且Adapter依赖Adaptee来完成功能。
+- 比喻：日亚买的空气净化器(Client)需要插入110V插座(Target)，但是家里只有220V插座(Adaptee)。于是买一个带电压转换的插座(Adapter)，这个插座本身需要插入220V插座。
+
+.Proxy
+
+image:http://www.dofactory.com/images/diagrams/net/proxy.gif[]
+
+- 目的：提供一个桩，实现对接口调用的控制（如权限控制，或者变换成RPC)
+- 图解：Client需要一个Subject。我们让Proxy包裹着RealSubject，并让Client访问Proxy。这样我们就能控制Client对Subject的调用过程。
+- 比喻：浏览器是Client，HTTP代理服务器是Proxy，海外网站是RealSubject
+
+.Bridge
+
+image:http://www.dofactory.com/images/diagrams/net/bridge.gif[]
+
+- 目的：在软件设计时，为了能让提供给客户端的接口和内部接口并行发展。因此这是一个By Design的模式，而不像Adapter是By Restriction。
+- 图解：提供给Client的接口是Abstraction，内部的接口是Implementor（因为有很多实现，所以需要接口）
+- 比喻：Can't think of a good one...
+- __Head First Design Pattern__ 对这个模式解释的比较清楚
+
+
+
+== Ref
+- http://www.dofactory.com/net/bridge-design-pattern[Bridge]
+- http://www.dofactory.com/net/proxy-design-pattern[Proxy]
+- http://www.dofactory.com/net/adapter-design-pattern[Adapter]
