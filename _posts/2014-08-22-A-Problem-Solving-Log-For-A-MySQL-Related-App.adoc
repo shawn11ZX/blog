@@ -2,7 +2,7 @@
 
 layout: post
 
-title: A problem solving log for a Mysql related Application
+title: A problem Solving Log for a Mysql Related Application
 
 ---
 

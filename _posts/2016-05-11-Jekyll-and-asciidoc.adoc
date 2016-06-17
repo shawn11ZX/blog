@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Jekyll+Asciidoc installation guide
+title: Jekyll+Asciidoc Installation Guide
 shortTitle: Jekyll+Asciidoc installation guide
 documentationExpanded: false
 comments: true

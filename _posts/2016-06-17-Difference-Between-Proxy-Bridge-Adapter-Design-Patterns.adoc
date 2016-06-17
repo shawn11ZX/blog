@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Difference between Proxy, Bridge and Adapter Design Patterns
+title: Differences between Proxy, Bridge and Adapter Design Patterns
 ---
 
 :toc: macro

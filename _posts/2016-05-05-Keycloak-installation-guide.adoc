@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Keycloak installation guide
+title: Keycloak Installation Guide
 shortTitle: Keycloak installation guide
 documentationExpanded: false
 comments: true
