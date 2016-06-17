@@ -30,7 +30,7 @@ image:http://www.dofactory.com/images/diagrams/net/proxy.gif[]
 image:http://www.dofactory.com/images/diagrams/net/bridge.gif[]
 
 - 目的：在软件设计时，为了能让提供给客户端的接口和内部接口并行发展。因此这是一个By Design的模式，而不像Adapter是By Restriction。
-- 图解：提供给Client的接口是Abstraction，内部的接口是Implementor（因为有很多实现，所以需要接口）
+- 图解：提供给Client的接口是Abstraction(一个抽象类），内部的接口是Implementor（因为有很多实现，所以需要接口）。注意到RefinedAbstraction不能直接使用implementor，而需要通过Abstration的方法。
 - 比喻：Can't think of a good one...
 - __Head First Design Pattern__ 对这个模式解释的比较清楚
 
