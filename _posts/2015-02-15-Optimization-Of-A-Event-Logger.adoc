@@ -1,11 +1,6 @@
 ---
-
 layout: post
-
-title: Optimization Of a Http Event Logger
-
-author: Shawn
-
+title: A Log for optimizing Of a Http Event Logger
 ---
 
 :toc: macro

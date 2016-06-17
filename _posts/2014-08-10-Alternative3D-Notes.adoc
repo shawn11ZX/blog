@@ -1,7 +1,6 @@
 ---
 layout: post
-title: Alternative3D Notes
-author: Shawn
+title: Alternative3D Code Reading Notes
 ---
 
 :toc: macro

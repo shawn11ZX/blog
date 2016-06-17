@@ -1,19 +1,12 @@
 ---
-
 layout: post
-
-title: A log for implementing a DevOp System
-
+title: A Log for Implementing a DevOp System
 ---
 
 :toc: macro
-
 :toclevels: 4
-
 :sectnums:
-
 :imagesdir: /images
-
 :hp-tags: Scala
 
 toc::[]

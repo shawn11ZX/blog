@@ -1,11 +1,6 @@
 ---
 layout: post
 title: Parsing Simple Expressions
-shortTitle: Parsing simple expressions
-documentationExpanded: false
-comments: true
-postsExpanded: true
-root: ../../../
 ---
 
 :toc: macro

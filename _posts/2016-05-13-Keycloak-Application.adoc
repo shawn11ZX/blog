@@ -1,11 +1,6 @@
 ---
 layout: post
-title: Keycloak Application
-shortTitle: Keycloak Application
-documentationExpanded: false
-comments: true
-postsExpanded: true
-root: ../../../
+title: Application of Keycloak Server
 ---
 
 :toc: macro

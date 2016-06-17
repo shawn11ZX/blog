@@ -1,9 +1,6 @@
 ---
-
 layout: post
-
-title: A problem Solving Log for a Mysql Related Application
-
+title: A Log for Solving a Mysql Connection Related Problem
 ---
 
 

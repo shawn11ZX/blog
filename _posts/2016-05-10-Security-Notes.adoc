@@ -1,11 +1,6 @@
 ---
-layout: default
-title: Security Notes
-shortTitle: Security Notes
-documentationExpanded: false
-comments: true
-postsExpanded: true
-root: ../../../
+layout: blog
+title: Security Related Notes
 ---
 
 :toc: macro

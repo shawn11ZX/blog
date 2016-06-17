@@ -1,7 +1,6 @@
 ---
 layout: post
-title: Javascript module dependencies
-shortTitle: Javascript module dependencies
+title: Javascript Module Dependencies Notes
 ---
 
 :toc: macro

@@ -1,7 +1,6 @@
 ---
 layout: post
 title: AngularJS 1 Notes
-shortTitle: AngularJS 1 Notes
 ---
 
 :toc: macro

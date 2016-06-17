@@ -1,11 +1,6 @@
 ---
 layout: post
-title: Software Rasterization
-shortTitle: Software Rasterization
-documentationExpanded: false
-comments: true
-postsExpanded: true
-root: ../../../
+title: Home Made Software Rasterization Example
 ---
 
 * Source Code: https://github.com/shawn11ZX/softRasterization/[https://github.com/shawn11ZX/softRasterization/]
