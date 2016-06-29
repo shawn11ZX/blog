@@ -1,0 +1,63 @@
+---
+layout: post
+title: A Bug Related to ConcurrentHashMap
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: Mysql
+
+
+toc::[]
+
+== The Problem
+
+After going online for a few days, one of our Java service consumed much more CPU than normally that weekend when online user number reached to peek.
+
+After investigation, we found that the java process was too busy doing GC. So we dumped its memory and analyze it using Yourkit.
+
+image::ConcurrentHashMap-memory.png[]
+
+Accordding to https://www.yourkit.com/docs/java/help/sizes.jsp[Shallow and retained sizes], **Shallow size** of an object is the amount of memory allocated to store the object itself.
+
+As we can see, the Shallow Size of ConcurrentHashMap's internal data structure takes way too much memory, which is suspious.
+
+[NOTE]
+====
+**Shallow size** of an object is the amount of memory allocated to store the object itself, not taking into account the referenced objects. Shallow size of a regular (non-array) object depends on the number and types of its fields. Shallow size of an array depends on the array length and the type of its elements (objects, primitive types). Shallow size of a set of objects represents the sum of shallow sizes of all objects in the set.
+
+**Retained size** of an object is its shallow size plus the shallow sizes of the objects that are accessible, directly or indirectly, **only** from this object. In other words, the retained size represents the amount of memory that will be freed by the garbage collector when this object is collected.
+====
+
+== The Root Cause
+
+In our service
+
+- There are 526747 TeamUserBean objects, each of which owns a ConcurrentHashMap<String, TeamUserTaskExpBean>.
+- The Retained Size of TeamUserBean objects is 1.65G
+- The Shallow Size of TeamUserBean object is 36M
+- The Retained Size of TeamUserTaskExpBean is 378M
+- All fields of TeamUserBean are primitive types, except for the ConcurrentHashMap<String, TeamUserTaskExpBean> field.
+- So, memory consumption of ConcurrentHashMap is **TeamUserBean Retained Size - TeamUserTaskExpBean Retained Size -  TeamUserBean Shallow Size**, which is about 1.3G
+
+We run a test similiar in http://www.javaspecialists.eu/archive/Issue193.html[Memory Usage of Maps], the results are:
+
+.In Java 1.7 environment
+
+- ConcurrentHashMap took 224 bytes
+- HashMap took 48 bytes
+- Hashtable took 112 bytes  
+
+.In Java 1.6 environment
+
+- ConcurrentHashMap which took **1664 bytes**  
+- HashMap which took 128 bytes  
+- Hashtable which took 112 bytes
+
+Unfortunately, we are using Java 1.6, so even if all ConcurrentHashMap are empty, they will take up 526747*1664 = 870M
+
+== The Solution
+
+Actually the ConcurrentHashMap<String, TeamUserTaskExpBean> of TeamUserBean does not need high concurrency, and we don't want to migrate to 1.7 too hasty, so finally we change the type of Map to Hashtable,
