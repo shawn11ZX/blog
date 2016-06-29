@@ -9,6 +9,8 @@ title: Cassandra Learning Notes
 :imagesdir: /images
 :hp-tags: Cassandra
 
+toc::[]
+
 == CAP
 
 Cassandra一般被定义为AP系统（HBase是CP系统），因为只保证Eventual Consistancy。
@@ -39,30 +41,86 @@ More specifically: R=read replica count W=write replica count N=replication fact
 Cassandra provides consistency when R + W > N (read replica count + write replica count > replication factor).
 ====
 
-== 术语
+== 关键概念
 
-从用户的角度看，需要用到的术语包括：
+- 类似于Mysql中的database，Cassandra中有**keyspace**的概念。
+- 类似于mysql的table，每个**keyspace**有多个**table**
+- 类似于mysql的row，每个table有多个**row**
+- 每个row有一个primary key和多个column
+- 每个primary key有一个partionion key和0-1个cluster key。
+- 每个partition key可以有0-N个子key组成
+- 每个cluster key可以有0-N个子key组成
+- 每个casssandra cluster包含多个nodes
+- 同一个table的不同row，根据partition key分布到各个node
 
-image::https://teddyma.gitbooks.io/learncassandra/content/assets/analogy.jpg[]
+如下面的table:
 
-在DataStax的文档中，使用Table代替Column Family的：
+[source,sql]
+----
+CREATE TABLE example (
+    partitionKey1 text,
+    partitionKey2 text,
+    clusterKey1 text,
+    clusterKey2 text,
+    normalField1 text,
+    normalField2 text,
+    PRIMARY KEY (
+        (partitionKey1, partitionKey2),
+        clusterKey1, clusterKey2
+        )
+    );
+----
 
-- http://docs.datastax.com/en/cassandra/2.1/cassandra/architecture/architectureIntro_c.html[ Architecture in brief]
+- primary key为(partitionKey1, partitionKey2), clusterKey1, clusterKey2
+- partition key为(partitionKey1, partitionKey2)
+- cluster key为clusterKey1, clusterKey2
+- column有: normalField1和normalField2两个
+
+存储时，可以理解为：
+- 每个行的所有列挨在一起存储，以partition key作为索引
+- 不同于mysql，每行的column在存储时除了记录column的value外，还需要编码column name
+- 编码的column name = cluster **value** + column name，因此同一个column，如果cluster key不同，编码后的column name不同
+
+下面的数据
+[source,java]
+----
+INSERT INTO example (
+    partitionKey1,
+    partitionKey2,
+    clusterKey1,
+    clusterKey2,
+    normalField1,
+    normalField2
+    ) VALUES (
+    'partitionVal1',
+    'partitionVal2',
+    'clusterVal1',
+    'clusterVal2',
+    'normalVal1',
+    'normalVal2');
+
+----
+
+存储后类似于：
+
+[source,java]
+----
+RowKey: partitionVal1:partitionVal2
+=> (column=clusterVal1:clusterVal2:, value=, timestamp=1374630892473000)
+=> (column=clusterVal1:clusterVal2:normalfield1, value=6e6f726d616c56616c31, timestamp=1374630892473000)
+=> (column=clusterVal1:clusterVal2:normalfield2, value=6e6f726d616c56616c32, timestamp=1374630892473000)
+----
+
+[NOTE]
+====
+参考资料
+
+- http://docs.datastax.com/en/cassandra/2.1/cassandra/architecture/architectureIntro_c.html[DataStax - Architecture in brief]
+- https://teddyma.gitbooks.io/learncassandra/content/model/cql_and_data_structure.html[teddyma - CQL & Data Structure]
+====
 
 
-从了解内部原理的角度看，主要用到的术语有：
-
-- memtable
-- commit log
-- sstable
-- partition
-- table
-- compound key
-- primary key
-- partition key
-- clustering column
-
-== Cassandra数据模型
+== Cassandra数据建模
 
 数据模型介绍如何合理的设计Table（Schema）。关于数据模型的介绍，以下资料比较清楚：
 
