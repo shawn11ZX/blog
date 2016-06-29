@@ -1,0 +1,189 @@
+---
+layout: post
+title: Cassandra Learning Notes
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: Cassandra
+
+== CAP
+
+Cassandra一般被定义为AP系统（HBase是CP系统），因为只保证Eventual Consistancy。
+
+根据这两篇文章，是否选择Cassandra的主要考虑因素是对Consistency的要求。Facebook的messaging system选择HBase而不是Cassandra，因为他们需要用户在发送Message后能马上知道是否发送成功。
+
+- http://www.theregister.co.uk/2010/12/17/facebook_messages_tech/[Facebook: Why our 'next-gen' comms ditched MySQL]
+- http://www.rubyscale.com/post/143067472625/facebook-and-hbase-versus-cassandra[Facebook and HBase versus Cassandra]
+
+Cassandra可以在通过客户端保证一致性。但是一个问题是，如果读写访问的是不同的节点，写后马上读可能会返回失败（虽然过一会可能就成功了）。
+
+例如节点有ABCDE，W=3，R=3，W+R=6>5，因此能保证一致性。加入一个客户端X写入ABC后，另外一个客户端Y读取CDE，因为有延迟，Y的读取可能会返回失败（同步后读取会返回成功）。
+
+- https://wiki.apache.org/cassandra/ArchitectureOverview?action=fullsearch&value=linkto%3A%22ArchitectureOverview%22&context=180[cassandra wiki - ArchitectureOverview]
+
+
+[NOTE]
+====
+On the contrary to the strong consistency used in most relational databases (**ACID** for __Atomicity Consistency Isolation Durability__) Cassandra is at the other end of the spectrum (**BASE** for __Basically Available Soft-state Eventual consistency__). Cassandra weak consistency comes in the form of eventual consistency which means the database eventually reaches a consistent state. As the data is replicated, the latest version of something is sitting on some node in the cluster, but older versions are still out there on other nodes, but eventually all nodes will see the latest version.
+
+More specifically: R=read replica count W=write replica count N=replication factor Q=**QUORUM** (Q = N / 2 + 1)
+
+*   If W + R > N, you will have consistency
+
+*   W=1, R=N
+*   W=N, R=1
+*   W=Q, R=Q where Q = N / 2 + 1
+Cassandra provides consistency when R + W > N (read replica count + write replica count > replication factor).
+====
+
+== 术语
+
+从用户的角度看，需要用到的术语包括：
+
+image::https://teddyma.gitbooks.io/learncassandra/content/assets/analogy.jpg[]
+
+在DataStax的文档中，使用Table代替Column Family的：
+
+- http://docs.datastax.com/en/cassandra/2.1/cassandra/architecture/architectureIntro_c.html[ Architecture in brief]
+
+
+从了解内部原理的角度看，主要用到的术语有：
+
+- memtable
+- commit log
+- sstable
+- partition
+- table
+- compound key
+- primary key
+- partition key
+- clustering column
+
+== Cassandra数据模型
+
+数据模型介绍如何合理的设计Table（Schema）。关于数据模型的介绍，以下资料比较清楚：
+
+- https://teddyma.gitbooks.io/learncassandra/content/model/data_model_and_cql.html[teddyma - Learn Cassandra - Data Model & CQL]
+- https://academy.datastax.com/courses/ds220-data-modeling/introduction-course-introduction[DataStax - DataStax - data-modeling]
+- https://academy.datastax.com/resources/getting-started-time-series-data-modeling[DataStax - Getting Started with Time Series Data Modeling]
+
+对Cassandra数据模型比较通俗易懂的解释来自于： https://teddyma.gitbooks.io/learncassandra/content/model/data_model_and_cql.html[teddyma - Learn Cassandra - Data Model & CQL]
+
+简而言之，Cassandra中的一个table可以看出一个 *Map<RowKey, SortedMap<ColumnKey,ColumnValue>>*。即每个table有很多row，并且以row key为索引。每个row有很多column。同一个row的数据挨着一起存放（下面详细介绍），不同column以 column key排序。
+
+[NOTE]
+====
+For each column family, don’t think of a relational table. Instead, think of a nested sorted map data structure. A nested sorted map is a more accurate analogy than a relational table, and will help you make the right decisions about your Cassandra data model.
+
+----
+``Map<RowKey, SortedMap<ColumnKey, ColumnValue>>``
+----
+
+image::https://teddyma.gitbooks.io/learncassandra/content/assets/sortedmap.jpg[]
+
+====
+
+== 存储引擎
+
+Cassandra uses a storage structure similar to a https://en.wikipedia.org/wiki/Log-structured_merge-tree[Log-Structured Merge Tree], unlike a typical relational database that uses a https://en.wikipedia.org/wiki/B-tree[B-Tree]. 
+
+
+== 数据的写入
+
+Cassandra在写方面的主要消耗在写入和后期的维护，这个mysql不太一样（主要就是写入）。
+
+下图是比较经典的关于Cassandra写路径的图：
+
+image::http://docs.datastax.com/en/cassandra/3.x/cassandra/images/dml_write-process_12.png[Storing data on disk in SSTables]
+
+写入分为三步：
+
+- 写入commit log
+- 写入memtable
+- Flush memtable to (a new ) sstable ( sorted string table ) 
+
+
+其中的memtable和sstable是各个表分开维护的。commit log用来保证断电等异常情况下，数据不丢失。memtable在内存中，用来提高读写速度，其中的的数据是排序的。当memtable大小超过临界值时，数据将flush到sstable。sstable中的同一个row的数据是挨在一起放的，row内的数据以clustering key的数据排序。flush memtable时，会创建新的sstable，而不会再更改该sstable。
+
+
+我们说的插入、删除、修改，都是以column为单位的。
+
+虽然在同一个sstable中，同一row的数据是挨着一起放的，但是同一row数据可以存在于多个sstable中。既同一个row的不同column可以存在于不同的sstable中。道理很简单，cassandra运行以column为读写单位，不同时间的读写如果涉及不同的column，不可能把不相关的column都在新的sstable中再写一遍。
+
+数据的修改和删除也可以被当作写入来考虑。修改不会去现有的sstable中删除数据，而是会写入新的数据到新的sstable。删除就是写入一个特殊的标识。对于某row的某个column，Cassandra根据时间戳来合并各sstable的值。
+
+相关介绍 http://docs.datastax.com/en/cassandra/2.1/cassandra/dml/dml_write_path_c.html[DataStax - Write Path]
+
+== 数据的维护及Compaction Strategy
+
+Cassandra中数据维护的主要目的是提高后期的读效率。每次flush memtable都创建sstable。因为memtable一般不大，理论上就有N个sstable。因为同一个row的数据能存在于不同的sstable，那获取任意row就要查找所有的sstable。
+
+当然，Cassandra有些加速机制。每个sstable维护了以下信息：
+
+*   Bloom filters, which can tell when a partition key is not in an SSTable.
+*   Minimum & maximum clustering keys, which can help rule out a number of SSTables.
+*   Minimum & maximum timestamps, which lets Cassandra reason about whether updates or deletes of values could have come after a particular value was written.
+*   (Hashed) partition key ranges, which in case Leveled Compaction Strategy is used, significantly reduces the number of potential SSTables to look in.
+
+但这样还不够，于是Cassandra中就有一个Compaction的过程，用来整理sstable，提高read效率。需要注意的是，**compaction过程也不会修改sstable，而只会新建和删除**。
+
+Cassandra目前有三种Compactin策略，需要根据实际应用去选择，也就是理论上不同的table需要选择不同的策略。他们是：
+
+- Size-Tied Compaction Strategy (STCS)
+- Leveled Compaction Strategy (LCS)
+- Date-Tied Compaction Strategy (DTCS)
+
+=== STCS
+
+STCS就是把类似大小的sstable合并在一起。
+
+=== LCS
+
+
+LCS需要注意的是：
+
+- 不同的Level的单个sstable的size是一样的，不同的level只是sstable个数不同。
+- 同level中的sstable之间row key是不会overlap的，而且L+1的sstable个数是L的10倍，因此能保证90%的读只需要访问一个sstable，而最差情况是需要访问ML个sstable（ML是max level）
+- 对于以write为主的table，LCS非常不合适，因为每个level都有大小限制，当低的满时，需要往高的level merge，这很可能需要重新生成高level的所有sstable。
+
+[NOTE]
+====
+相关资料
+
+- https://rawgit.com/google/leveldb/master/doc/impl.html[leveldb implementation]
+- http://jmoiron.net/blog/thoughts-on-timeseries-databases[Thoughts on Time-series Databases]
+====
+
+=== DTCS
+
+DTCS顾名思义适用于Date Series数据，但是它有两个前提：
+
+- writes come at a somewhat steady rate, 
+- timestamps roughly reflect the time of arrival to Cassandra
+
+Compaction的过程可以用DataStax提供这张图解释：
+
+image::https://www.datastax.com/wp-content/uploads/2014/11/dtcs_blog1.png[]
+
+我们先确定一个有多个windows组成的滑动窗口序列（图中的几道竖线）。
+
+- 序列的第一个（离now最近的）窗口的大小由变量**base_time_seconds **决定
+- 第N+1个windows窗口大小是第N个的min_threshold倍。
+
+随着时间的推移，我们把这个滑动窗口序列往前推移。推移过程中，最老时间戳属于同一个window的sstable数量如果大于**min_threshold**个，则合并。
+
+
+
+[NOTE]
+
+====
+相关资料
+
+- https://labs.spotify.com/2014/12/18/date-tiered-compaction/[Spotify - Date-Tiered Compaction in Apache Cassandra]
+- http://www.datastax.com/dev/blog/datetieredcompactionstrategy[DataStax - DateTieredCompactionStrategy: Compaction for Time Series Data]
+- https://github.com/scylladb/scylla/wiki/SSTable-compaction[scylla - SSTable compaction]
+====
+

@@ -256,8 +256,8 @@ The principal threat to scalability in concurrent applications is the exclusive 
 - 用其他机制代替exlusive lock: Concurrent Collection, Read/Write Lock, Immutable objects, Atomic Variables
 
 .ConcurrentMap的大概实现方式
-- 将buckets分组，每组用不同的lock，pub/del只需要lock相应的bucket的锁
-- 计算size时，每组buckets有个counter（每次pub/del都会更新），总的size根据各buckets的counter动态计算
+- 将buckets分组，每组用不同的lock，put/del只需要lock相应的bucket的锁
+- 计算size时，每组buckets有个counter（每次put/del都会更新），总的size根据各buckets的counter动态计算
 
 .ConcurrentHashMap和synchronized HashMap
 - 单线程时，前者也更快
@@ -318,7 +318,7 @@ CAS只能解决: 变量V的值是否在我上次观察他之后**变成其他不
 === Chapter 16 Java Memory Model
 
 .Memory Model
-定义在什么条件下，一个线程能**看到**一个变量的修改（可能来自本线程，也可以来自其他线程）
+定义在什么条件下，一个操作能**看到**一个变量的修改（可能来自本线程，也可以来自其他线程）
 
 .Architecture Memory Model
 An architecture’s memory model tells programs what **guarantees** they can expect from the memory system, and specifies the **special instructions** required (called memory barriers or fences) to get the additional memory coordination guarantees required when sharing data  
@@ -332,7 +332,11 @@ An architecture’s memory model tells programs what **guarantees** they can exp
 - 由于cache等，导致写操作的结果可见时间变化
 
 .Happens-Before(HB)关系
-要保证B线程看到A线程的结果，需要A happens-before B
+要“保证”操作Y看到操作X的结果，需要Y happens-before X 
+
+happens-before关系有piggy-back特性，既: X之前的所有操作对Y之后的所有操作可见
+
+下图，操作lock happens-before unlock：
 
 image::concurrency-happens-before.png[]
 
@@ -368,7 +372,7 @@ image::concurrency-happens-before.png[]
 因此可以使用piggybacking的方式，把多个happens-before关系合并成一个
 
 .Initialization safety
-对于properly constructed objects，所有线程能正确的看到他的final字段，已经通过该字段所有到达的所有变量。
+对于properly constructed objects，所有线程能正确的看到他的final字段，以及通过该字段所有到达的所有变量。
 (such as the elements of a final array or the contents of a HashMap referenced by a final field) 
   
 
