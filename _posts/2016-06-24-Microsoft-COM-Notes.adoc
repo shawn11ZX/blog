@@ -1,0 +1,131 @@
+---
+layout: post
+title: Microsoft COM notes
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: COM, side-by-side, Registration Free activation
+
+toc::[]
+
+== 起因
+
+最近要做一个微端的项目，需要开发一个native的程序，该程序需要使用Flash Player ActiveX控件。现在都很少有新的文章介绍COM，因为项目需要只能硬着头皮开始查资料。
+
+== OLE, COM, ActiveX ...
+
+首先是一大堆容易混淆的概念：
+
+- OLE
+- OLE control
+- OLE object
+- COM
+- COM object
+- activex control
+
+搞不清，粗暴点可以理解为所有东西都是基于COM，只不过可能需要的支持的接口不太一样，所适用的场景不一样。
+
+[NOTE]
+====
+https://support.microsoft.com/en-us/kb/159621[INFO: Difference Between OLE Controls and ActiveX Controls]
+
+Keep in mind that an ActiveX control is just another term for an "OLE Object" or "Component Object Model (COM) Object."
+
+1.  Q. What is the difference between an OLE control and an ActiveX control?
+
+A. No difference. "ActiveX control" renames and restructures the OLE controls technology. For marketing reasons, the term OLE has come full circle and once again refers to the OLE technologies that apply to object linking and embedding only. The term "OLE control" has been replaced with the "ActiveX control" to distance the name from the older Object Linking and Embedding technology with which controls have very little in common. No one should use the term "OLE control" anymore.
+
+====
+
+== COM中的概念
+
+为了使用COM技术，需要理解的概念有：
+
+- https://en.wikipedia.org/wiki/Component_Object_Model#Interface_Definition_Language_and_type_libraries[IDL和typelib]
+- https://en.wikipedia.org/wiki/Component_Object_Model#Interfaces[interface]
+- https://en.wikipedia.org/wiki/Component_Object_Model#Classes[coclass (COM class)]
+
+IDL files define object-oriented classes, interfaces, structures, enumerations and other user-defined types in a language independent manner.
+
+A type library (.tlb) is a binary file that stores information about a COM or DCOM object's properties and methods in a form that is accessible to other applications at runtime.
+
+从IDL可以生成typelib文件(TLB)
+
+interface和coclass的关系可以看出C++里面接口和类。
+
+
+image::https://www.microsoft.com/msj/0898/idl/idlfig01.gif[]
+
+== Registration Free activation
+
+为了能在不需要注册Flash ActiveX控件时，我们程序 也能正常运行，需要用到Registration-Free Activation of COM Components或者Side by Side assemblies，从而达到isolated applications的效果。
+
+=== 利用Visual Studio生成manifest文件内容
+
+为了达到这个isolated效果，需要在application的manifest文件中指定哪些COM到指定的地方加载。但是这个编写过程太繁琐，很容易出错。因此最好借助工具来生成相应的manifest文件。
+
+我的系统是Windows 7，网上找的工具不知因为什么原因，基本不能为Flash生成manifest文件。最终参考的是　https://weblog.west-wind.com/posts/2011/oct/09/an-easy-way-to-create-side-by-side-registrationless-com-manifests-with-visual-studio[An easy way to create Side by Side registrationless COM Manifests with Visual Studio]
+
+步骤如下:
+
+- 用Visual Studio (我是2013) 创建一个C#项目
+- 在项目中引用Shockwave Flash
+- 设置引用的属性为isolated
+- 设置项目输出manifest文件
+
+这样就能生成一个模板了，模板中核心的内容是：
+[source,xml]
+----
+<file name="Flash32_22_0_0_192.ocx" asmv2:size="19531456">
+    <typelib tlbid="{d27cdb6b-ae6d-11cf-96b8-444553540000}" version="1.0" helpdir="" resourceid="0" flags="HASDISKIMAGE" />
+    <comClass clsid="{d27cdb6e-ae6d-11cf-96b8-444553540000}" threadingModel="Apartment" tlbid="{d27cdb6b-ae6d-11cf-96b8-444553540000}" progid="ShockwaveFlash.ShockwaveFlash.22" description="Shockwave Flash" />
+</file>
+----
+
+=== 设置native程序的manifest文件
+
+回到我们的微端程序。设置项目属性生成外部manifest文件。将上面的代码拷贝到生成的manifest文件。启动程序，就能看到程序会加载Flash32_22_0_0_192.ocx而不是系统安装的flash（当然前提是exe的目录下有这个ocx文件）
+
+=== 坑和调试
+
+遇到的坑有
+
+- 一定要在native工程文件里把**嵌入清单**设置成**否**，才能使程序加载修改的manifest文件
+- Windows可能会Cache Manifest文件，从而导致即使改了manifest文件，也没任何反应。可以通过改可执行文件路径使cache无效。
+
+image::COM-manifest.png[]
+
+上面的文章中提到可以用sxstrace工具调试，记得要用管理员权限启动：
+
+.debug.bat文件
+
+[source]
+----
+sxstrace Trace -logfile:sxs.bin
+sxstrace Parse -logfile:sxs.bin -outfile:sxs.txt
+----
+
+=== 验证
+通过 https://technet.microsoft.com/en-us/sysinternals/processexplorer.aspx[Process Explorer] 能验证程序是否加载当前目录下的ocx文件
+
+
+== 相关链接
+
+- https://weblog.west-wind.com/posts/2011/oct/09/an-easy-way-to-create-side-by-side-registrationless-com-manifests-with-visual-studio[An easy way to create Side by Side registrationless COM Manifests with Visual Studio]
+
+- https://msdn.microsoft.com/en-us/library/dd408052(v=vs.85).aspx[Isolated Applications and Side-by-side Assemblies]
+
+- http://msdn.microsoft.com/en-us/library/ms973913.aspx[Registration-Free Activation of COM Components: A Walkthrough]
+
+- https://msdn.microsoft.com/en-us/library/windows/desktop/ms688269(v=vs.85).aspx[OLE-COM Object Viewer] 
+- https://msdn.microsoft.com/en-us/library/windows/desktop/ms693359(v=vs.85).aspx[MIDL compiler]
+
+- https://blogs.msdn.microsoft.com/junfeng/2007/04/14/genman32-a-tool-to-generate-sxs-manifest-for-managed-assembly-for-registration-free-com-net-interop/[Genman32] :  只能managed程序
+
+- http://www.codeproject.com/Articles/28682/regsvr-Generate-SxS-Manifest-Files-from-Native-D[regsvr42] : 生成Side-By-Side manifest(Win7 生成不了)
+
+- http://www.codeproject.com/Articles/276450/Generating-IDL-and-Manifest-Files-with-TypeLibInfo[TypelibInfo]: 生成Side-By-Side manifest(Win7 生成不了)
+
