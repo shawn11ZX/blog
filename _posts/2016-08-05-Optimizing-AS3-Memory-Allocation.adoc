@@ -51,9 +51,9 @@ image::https://github.com/adobe-flash/crossbridge/wiki/images/pthread1.png[]
 
 
 
-=== Domain Memory
+== Crossbridge & Domain Memory
 
-==== Requirement from Crossbridge
+=== Requirement from Crossbridge
 To my understanding, domain memory is something created in flash player that make building crossbridge possible.
 
 To translate C/C++ code into avm code. Crossbridge has to deal with these issues:
@@ -63,7 +63,7 @@ To translate C/C++ code into avm code. Crossbridge has to deal with these issues
 - simulate RAM access
 
 
-==== simulate RAM access
+=== simulate RAM access
 
 The article http://www.adobe.com/devnet/air/articles/faster-byte-array-operations.html[Faster byte array operations with ASC2] might give us some hint on how the third issue can be resolved:
 
@@ -92,7 +92,7 @@ Package avm2.intrinsics.memory {
      public function sxi16(value:int):int; // sign extend a 16 bit value to 32 bits
 ----
 
-==== realizing malloc
+=== realizing malloc
 
 So how can Crossbridge allocate the memory in the first place?
 
@@ -110,7 +110,7 @@ The interface of sbrk is:
 **Returns:**    The old break value,  or -1 if an error occurred.
 
 http://vitaly_filatov.tripod.com/ng/tc/tc_000.228.html
-====
+===
 
 The source code of sbrk in Crossbridge is something like this:
 [source, actionscript]
@@ -160,7 +160,7 @@ This code snippet is cited from the posix/C_Run.as file in crossbridge source co
 (3) sbrk is using currrnt length property of ByteArray as the new break value. So the offset [0-length] of this ByteArray correspond to ram address of [0-length].
 
 
-==== ByteArray
+=== ByteArray
 
 At first glance, from the code snippet (1), it seems that we can created a sharable ByteArray at the main thread and pass it to child worker thread each time it is started.
 
