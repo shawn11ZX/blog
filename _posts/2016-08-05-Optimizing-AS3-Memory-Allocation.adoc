@@ -1,0 +1,264 @@
+---
+layout: post
+title: Optimizing AS3 Crossbridge Memory Allocation
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: Flash Player, ActionScript, Crossbridge
+
+toc::[]
+
+== The Problem
+
+The flash client of our game encountered some problem similiar to what's been described in https://github.com/adobe-flash/crossbridge/wiki/Memory-Fragmentation[Memory Fragmentation].
+
+In summary:
+
+- Our client is multithreaded ( using Workers in actionscript)
+- One of the thread (Logic) depends of several modules written in c/c++ which are compiled by crossbridge.
+- These c/c++ modules need to allocate a lot of memory.
+- The Logic thread needs to be restarted from time to time, so these memory will be freed and allocated from time to time.
+
+The problem is that on a Win 32 platform, at some point, these c/c++ module will fail to allocate memory.
+
+The reason is that, according to the article, c/c++ modules need consecutive memory for all of it's heap and stack, but due to fragmention and limited virtual memory space on win32, flash failed to allocate them.
+
+
+== Memory Model of AVM and Crossbridge
+
+By seaching through the Internet and reading source code of AVM and Crossbridge, I found that:
+
+- Each Flash Application contains multiple Worker Threads, the worker associated with the main SWF is called the primordial worker.
+
+- Memory (heap, stack, global variables) between workers are seperated as if they were different processes.
+
+- Howerver Workers can share the same blocks of memory via sharing  *shareable ByteArray* (see http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/flash/system/Worker.html#setSharedProperty()[Worker.setSharedProperty] )
+
+- Each Worker can have several domain, and each domain can have  one http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/flash/system/ApplicationDomain.html#domainMemory[domainMemory] at any time.
+
+- Modules of the same domain share the same ByteArray.
+
+- Modules of different domains of different Workers can share the same ByteArray if needed.
+
+Here is a diagram showing part of the above declaration:
+
+.From https://github.com/adobe-flash/crossbridge/wiki/The-memory-usage-of-threads[The memory usage of threads]
+
+image::https://github.com/adobe-flash/crossbridge/wiki/images/pthread1.png[]
+
+
+
+=== Domain Memory
+
+==== Requirement from Crossbridge
+To my understanding, domain memory is something created in flash player that make building crossbridge possible.
+
+To translate C/C++ code into avm code. Crossbridge has to deal with these issues:
+
+- translate C/C++ into avm code
+- provide system api so that most linux/unix program can be compiled.
+- simulate RAM access
+
+
+==== simulate RAM access
+
+The article http://www.adobe.com/devnet/air/articles/faster-byte-array-operations.html[Faster byte array operations with ASC2] might give us some hint on how the third issue can be resolved:
+
+- first we have to allocate a ByteArray and assign it to ApplicationDomain.currentDomain.domainMemory
+
+[source,actionscript]
+ApplicationDomain.currentDomain.domainMemory = myByteArray;
+
+- then we can call function in package avm2.intrinsics.memory to access any offset of the ByteArrray object
+
+[source,actionscript]
+----
+Package avm2.intrinsics.memory {
+     public function li8(addr:int):int; // load 8 bit int
+     public function li16(addr:int):int; // load 16 bit int
+     public function li32(addr:int):int; // load 32 bit int
+     public function lf32(addr:int):Number; // load 32 bit float
+     public function lf64(addr:int):Number; // load 64 bit float
+     public function si8(value:int, addr:int):void; // store 8 bit integer
+     public function si16(value:int, addr:int):void; // store 16 bit integer
+     public function si32(value:int, addr:int):void; // store 32 bit integer
+     public function sf32(value:Number, addr:int):void; // store 32 bit float
+     public function sf64(value:Number, addr:int):void; // store 64 bit float
+     public function sxi1(value:int):int; // sign extend a 1 bit value to 32 bits
+     public function sxi8(value:int):int; // sign extend an 8 bit value to 32 bits
+     public function sxi16(value:int):int; // sign extend a 16 bit value to 32 bits
+----
+
+==== realizing malloc
+
+So how can Crossbridge allocate the memory in the first place?
+
+To implement malloc, crossbridge just bollowed some open source implementation. But besides that, it has to implement functions like sbrk and mmap.
+
+The interface of sbrk is:
+[NOTE]
+====
+ sbrk() adds 'incr' bytes to the break value of the calling process.
+    The break value is the address of the first byte of unallocated
+    memory.  Changing the break value adjusts the size of the program's
+    allocated memory.  If 'incr' is negative, the amount of allocated
+    space is reduced.
+
+**Returns:**    The old break value,  or -1 if an error occurred.
+
+http://vitaly_filatov.tripod.com/ng/tc/tc_000.228.html
+====
+
+The source code of sbrk in Crossbridge is something like this:
+[source, actionscript]
+----
+  public const ram_init:ByteArray =
+    (workerClass ? workerClass.current.getSharedProperty("flascc.ram") : null) ||
+    (domainClass.currentDomain.domainMemory ? domainClass.currentDomain.domainMemory : new ByteArray); // (1)
+
+  domainClass.currentDomain.domainMemory = ram_init; // (2)
+  
+  [GlobalMethod]
+  public function sbrk(size:int, align:int):int
+  {
+    var curLen:int = ram_init.length;
+    var result:int = (curLen + align - 1) & -align;
+    var newLen:int = result + size;
+
+...
+      for(;;)
+      {
+        var casLen:int;
+
+        try {
+          casLen = ram_init.atomicCompareAndSwapLength(curLen, newLen); // (3)
+        } catch(e:*) {
+          if(C_Run.throwWhenOutOfMemory) throw e;
+          return -1;
+        }        
+
+        if(casLen == curLen)
+          break;
+        curLen = casLen;
+        result = (curLen + align - 1) & -align;
+        newLen = result + size;
+      }
+...
+    return result;
+  }
+----
+
+This code snippet is cited from the posix/C_Run.as file in crossbridge source code. It's linked into module at link time and each module have a seperate copy of their own. 
+
+(1) Each module get their ByteArray for *ram* by the shared property flascc.ram, or use the existing one assigned to domainMemory, or allocate one by their own. At first, we might think that each module can have it's own ByteArray. But it's not. 
+
+(2) Because crossbridge has to assign it to domainMemory in order to use functions in avm2.intrinsics.memory.
+
+(3) sbrk is using currrnt length property of ByteArray as the new break value. So the offset [0-length] of this ByteArray correspond to ram address of [0-length].
+
+
+==== ByteArray
+
+At first glance, from the code snippet (1), it seems that we can created a sharable ByteArray at the main thread and pass it to child worker thread each time it is started.
+
+To do that, we have to truncate the length property of the ByteArray to zero before passing to the Logic Thread according to (3).
+
+However is won't help becuase of the implementation of ByteArray.
+
+To simplify, We can treat ByteArray as a C structure:
+
+[source,C]
+----
+struct ByteArray {
+    char * array;
+    int capacity;
+    int length;
+}
+----
+
+The memory block pointed by __array__ field has a size of __capacity__, the __length__ field is the length seen by user. __capacity__ is always larger that __length__.
+
+Every time length is changed, ByteArray will calculate a new capacity and compare it to the original one. If they differ, a new array will be allocated.
+
+So this solution won't elimite memory free/allocation, and thus is vulnerable to memory fragmentation.
+
+== The Solution
+
+Surely we can't change the source code of ByteArray since it's part of AVM which is built into flash players.
+
+But we can change the crossbridge code.
+
+To tell new break address, instend of using length property we reserve 4 bytes in the shared ByteArrary to store the current length.
+
+The source code is uploaded to https://github.com/shawn11ZX/crossbridge
+
+Main thread has to allocate a shareable ByteArray and set some bytes before passing it to child:
+
+[source,actionscript]
+----
+	import flash.system.Worker;
+	import flash.utils.ByteArray;
+	import flash.utils.Endian;
+
+	public class Test
+	{
+		private static const _ram:ByteArray = new ByteArray();
+		_ram.length = 100*1000*1000;
+		_ram.shareable = true;
+		_ram.position = 0;
+		_ram.endian = Endian.LITTLE_ENDIAN;
+		_ram.writeInt(0x11223344);
+		
+		protected var _worker:Worker;
+		
+		public function beforeCreateWorker(): void
+		{
+			
+			_ram.length = 0;
+			_ram.length = 100*1000*1000;
+			
+			_ram.position = 4;
+			_ram.writeInt(0);
+			_ram.position = 0;
+			_ram.writeInt(0x11223344);
+			
+			_worker.setSharedProperty("flascc.ram", _ram);
+		}
+	}
+----
+
+
+== Related Source Code
+
+https://github.com/adobe-flash/avmplus[Actionscript virtual machine]
+
+- posix/C_Run.as -> implemation of sbrk
+- posix/CModule.as
+- posix/AlcDbgHelper.as
+- posix/libcHack.as
+- llvm-2.9\lib\Target\AVM2\AVM2AsmPrinter.cpp -> use of avm2.intrinsics.memory to access RAM
+
+https://github.com/adobe-flash/crossbridge[crossbridge]
+
+- core/ErrorConstants.h -> Error Code defination for debug
+- core/ByteArray.as -> ByteArray implementation
+- core/ByteArrayGlue.h -> ByteArray implementation
+- core/ByteArrayGlue.cpp -> ByteArray implementation
+- core/Interpreter.cpp -> implementation of functions in avm2.intrinsics.memory
+- generated/Builtin.h -> Mapping AS3 class to C++ class
+
+== References
+
+- http://crossbridge.io/docs/Reference.html[FlasCC reference]
+- https://github.com/adobe-flash/crossbridge/wiki/Memory-Fragmentation[Memory Fragmentation]
+- http://stackoverflow.com/questions/3479330/how-is-malloc-implemented-internally[How is malloc() implemented internally]
+- https://blog.coresecurity.com/2015/04/13/analysis-of-adobe-flash-player-shared-bytearray-use-after-free-vulnerability/[Analysis of Adobe Flash Player shared ByteArray Use-After-Free Vulnerability]
+- http://www.adobe.com/devnet/air/articles/faster-byte-array-operations.html[Faster byte array operations with ASC2]
+- http://help.adobe.com/en_US/as3/dev/WSd75bf4610ec9e22f43855da312214da1d8f-8000.html[Working with application domains]
+- http://www.senocular.com/flash/tutorials/contentdomains/?page=2[Application Domains]
+- https://live.paloaltonetworks.com/t5/Threat-Articles/Understanding-Flash-Exploitation-and-the-Alleged-CVE-2015-0359/ta-p/60205[Understanding Flash Exploitation and the Alleged CVE-2015-0359 Exploit]
+- http://www.bytearray.org/?p=4423[A sneak peek: Concurrency with ActionScript Workers]
+- http://help.adobe.com/en_US/flex/using/WS2db454920e96a9e51e63e3d11c0bf69084-7fc9.html[= Editing the mm.cfg file]
