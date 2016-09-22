@@ -1,6 +1,6 @@
 ---
 layout: post
-title: a Wired Crossbridge Problem 
+title: A Wired Crossbridge Problem 
 ---
 
 :toc: macro
