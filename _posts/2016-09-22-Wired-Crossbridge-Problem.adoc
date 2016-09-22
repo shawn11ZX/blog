@@ -1,0 +1,51 @@
+---
+layout: post
+title: a Wired Crossbridge Problem 
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: Flash Player, ActionScript, Crossbridge
+
+toc::[]
+
+== The Problem
+
+Our game client is made up of two swf files (e.g. preloader.swf and game.swf, and preloader.swf will load game.swf), each of which has to do some md5 caculations. 
+
+We implemented the md5 algorithm in C and compile it to *md5.swc* via crossbridge, because we found that md5 algorithm implemention in AS3 is far more slower than implemention in C (and compiled by Crossbridge).
+
+These two swf files are maintained by 2 different teams and the building environment is not very smart, so we distributed the binary *md5.swc* file to them manually.
+
+It work pretty well at first, until one day one of the team compiled a *new md5.swc* with the *exact same code*. Theoretically these was no problem there, but strangly the preloader.swf would now unable to load game.swf any more. In fact, we found we always have to use the same md5.swf. Even with the same code and same building envrionment, two md5.swf generated at two different times will always cause error.
+
+== The Root cause
+
+The md5.swc compiled via Crossbridge contains two main namespaces: 
+
+- a public namespace with name provide by developer
+- a private namespace with some random name
+
+*These two namespaces reference each other.* In fact, when loading, code in private namespace may perform some initializion by calling code in public namespace. 
+
+Two build of the same code with have:
+
+- same public namespace
+- two different private namespace
+
+So when preloader.swf loads game.swf with a different md5.swc, the public namespace may be initialized twice. 
+
+== The solution
+
+There are two solutions:
+- Make sure these two swf always use the same build of md5.swc
+- Change crossbridge to not generate random name for private namespace.
+
+The path for the second solution is: 
+
+[source,diff]
+----
+include::_posts/crossbridge.patch[]
+----

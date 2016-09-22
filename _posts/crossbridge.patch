@@ -1,0 +1,30 @@
+ llvm-2.9/lib/Target/AVM2/AVM2AsmPrinter.cpp | 16 +---------------
+ 1 file changed, 1 insertion(+), 15 deletions(-)
+
+diff --git a/llvm-2.9/lib/Target/AVM2/AVM2AsmPrinter.cpp b/llvm-2.9/lib/Target/AVM2/AVM2AsmPrinter.cpp
+index af61a9d..8b433fb 100644
+--- a/llvm-2.9/lib/Target/AVM2/AVM2AsmPrinter.cpp
++++ b/llvm-2.9/lib/Target/AVM2/AVM2AsmPrinter.cpp
+@@ -668,21 +668,7 @@ public:
+     }
+ 
+     std::string getModulePackageName(const Module &M) const {
+-	// need to add a UUID to the module ident so it's really unique
+-	static std::map<const Module *, UUID> modUUIDs;
+-
+-        std::string uuid = modUUIDs[&M].str();
+-        std::string EID = M.getModuleIdentifier();
+-        std::replace(EID.begin(), EID.end(), '@', '_'); // Mangler allows '@' but we don't.. should be only char Mangler thinks is ok that we don't like
+-
+-        EID += ":";
+-        EID += uuid;
+-
+-        Twine TMN = EID;
+-        SmallString<256> MN;
+-        Mang->getNameWithPrefix(MN, TMN);
+-        std::string R = MN.str();
+-        return getPackageName(M) + R;
++		return "C_Run_internal";
+     }
+ 
+     // Following the behavior of llvm-2.9/tools/lto/LTOModule.cpp
