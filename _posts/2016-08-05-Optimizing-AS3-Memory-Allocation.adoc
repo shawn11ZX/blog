@@ -110,7 +110,7 @@ The interface of sbrk is:
 **Returns:**    The old break value,  or -1 if an error occurred.
 
 http://vitaly_filatov.tripod.com/ng/tc/tc_000.228.html
-===
+====
 
 The source code of sbrk in Crossbridge is something like this:
 [source, actionscript]

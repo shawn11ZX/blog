@@ -1,6 +1,6 @@
 ---
 layout: post
-title: A Wired Crossbridge Problem 
+title: A Weird Crossbridge Problem 
 ---
 
 :toc: macro
@@ -49,3 +49,8 @@ The path for the second solution is:
 ----
 include::_posts/crossbridge.patch[]
 ----
+
+
+The result is as following(The top one is changed, the bottom one is original):
+
+image::crossbridge-namespace.png[]
