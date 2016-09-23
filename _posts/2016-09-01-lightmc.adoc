@@ -14,7 +14,7 @@ title: Lightmc - A lightweight message channel library for Java
 
 :sectnums:
 
-:imagesdir: ../images
+:imagesdir: /images
 
 :hp-tags: Java, message channel, netty
 
@@ -400,8 +400,9 @@ In our production environment, we found the first one very useful. The http serv
 
 
 
-image::grafna.png[]
+image::grafana.png[]
 
+Please refer to StatisticManager for how to setup.
 
 
 Zipkin related function is only in demo stage, in which we send zipkin data by http client (and may cause performance issues), please refer to ZipKinRecorder.java for detail.
