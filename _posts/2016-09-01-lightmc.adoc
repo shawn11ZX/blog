@@ -1,0 +1,412 @@
+---
+
+layout: post
+
+title: Lightmc - A lightweight message channel library for Java
+
+---
+
+
+
+:toc: macro
+
+:toclevels: 4
+
+:sectnums:
+
+:imagesdir: ../images
+
+:hp-tags: Java, message channel, netty
+
+
+
+toc::[]
+
+
+
+== Backgound
+
+
+
+Our game system are composed of more than 10 kinds of java services, and some of them have hundreds of instances.
+
+
+
+For underlying communication library, we investigated several open source candidates. They can be mainly divided into two categories:
+
+
+
+- rpc based, such as
+
+* finagle
+
+* thrift
+
+* grpc
+
+* KryoNet
+
+- message based, such as
+
+* akka
+
+* zeromq
+
+
+
+Rpc libraries doesn't fit into our situation quite well, as we usually need bidirectional communication channels. In fact, as part of the game system, each service may need to push *events* ASAP to the player both directly or via other services. Of cause, we can setup two connections to fix this problem, but that would be ugly.
+
+
+
+Messaging libraries such as akka satisfy most of our requirements, exception one thing: we hope there is only one connection between any two communication peers, but library such as akka maintain one connection for each communication direction.
+
+
+
+Most of our services have states. To maintain consistency and keep design simple, when communication channel is disconnected, services at both end can simply reset related states. If there are two connections, it's harder to reason about states.
+
+
+
+So that promoted the development of of A lightweight message channel library: https://github.com/shawn11ZX/lightmc[lightmc]
+
+
+
+== Features
+
+
+
+- Battle proved: it has been used in a system will millions of players.
+
+- Bidirectional communicaton on one TCP connection
+
+- Simple and type safe messaging interface
+
+- Customizable Serializer, natively support AMF3 and Java serialization
+
+- Monitorable
+
+- Auto reconnect
+
+
+
+
+
+
+
+== Usage
+
+
+
+For each peer of communication, there are a Client who initiate connections and a Server who listens and accepts connections. 
+
+
+
+
+
+Both Client and Server can *registerCallback* to process received messages. 
+
+
+
+Both Client and Server can send messages to remote peer by first *newOutputProxy* from an connected NetSession and then call the reterned interface directly.
+
+
+
+=== Message interface
+
+
+
+First we have to define message interface, that is the kind of messages client and server will send to each other.
+
+
+
+In lightmc, we define message interface as Java interface, each method defines one message type. The return type of these methods should be void. The arguments should be Serializable Classes.
+
+
+
+For example, bellow is interface between our SampleClient and SampleServer.
+
+
+
+.interface provided by server (and called by client)
+
+[source,java]
+
+----
+
+interface ISampleService {
+
+	void register(String name);
+
+	void heartBeat();
+
+}
+
+----
+
+
+
+.interface provided by client (and called by server)
+
+[source,java]
+
+----
+
+interface ISampleServiceCallback {
+
+	void onRegisterSucc(String name);
+
+	void onHeartBeat();
+
+}
+
+----
+
+
+
+=== Setting up client
+
+
+
+.Setting up ApcClientFactory
+
+[source,java]
+
+----
+
+ServiceCallbackHandler handler = new ServiceCallbackHandler();
+
+		
+
+ApcClientFactory pool = ApcClientFactory.newBuilder()
+
+		.registerCallback(handler, ISampleServiceCallback.class)
+
+		.setApcSerializer(ApcSerializer.JObj)
+
+		.setIoThreadCount(2)
+
+		.setApcThreadCount(2)
+
+		.setReadTimeout(60)
+
+		.build();
+
+
+
+
+
+ClientNetSession client = pool.connect(Config.getLoginIp(), Config.getLoginPort(), handler);
+
+client.enableAutoReconnect(10, handler);
+
+----
+
+
+
+A *ApcClientFactory* defines a client connection pool from which we can allocation client connections.
+
+
+
+Each *ApcClientFactory* should define:
+
+
+
+- serialization method by calling setApcSerializer
+
+- thread number for io (netty read/write/connection management), by calling setIoThreadCount
+
+- thread number for apc processing, by calling setApcThreadCount
+
+- call back handlers we message is received (can have multiple), by calling registerCallback
+
+
+
+Client initiate a connection by calling *ApcClientFactory.connect" with parameters:
+
+
+
+- peer host name
+
+- peer port
+
+- a object that implement NetSessionEventHandler
+
+
+
+*NetSessionEventHandler* defines callback functions for connection events, such as:
+
+
+
+- connection connected
+
+- connection disconnected
+
+- active connection failed
+
+- exception happenned
+
+
+
+It then enable auto reconnection by calling *ClientNetSession.enableAutoReconnect*, note thought one have to call *ClientNetSession.disableAutoReconnect* when the Netsession is no longer need, otherwise there would be resource leak.
+
+
+
+[NOTE]
+
+We use the abbreviation APC to refer to a message.
+
+
+
+.Client side ServiceCallbackHandler
+
+[source,java]
+
+----
+
+public static class ServiceCallbackHandler implements ISampleServiceCallback, NetSessionEventHandler, HeartBeatHandler
+
+	{
+
+		ISampleService helloService;
+
+		@Override
+
+		public void onRegisterSucc(String name) {
+
+			System.out.println("server reply: onRegisterSucc " + name);
+
+		}
+
+
+
+		@Override
+
+		public void channelConnected(NetSession session) {
+
+			System.out.println("connected to server send register");
+
+			helloService = session.newOutputProxy(ISampleService.class);
+
+			helloService.register("bob");
+
+		}
+
+
+
+		...
+
+	}
+
+----
+
+
+
+When connected, Client will call *NetSession.newOutputProxy* to return a interface, by which it can send message to the peer.
+
+
+
+
+
+=== Setting up Server
+
+
+
+Setting up server is pretty much like setting up Client, please see code example below:
+
+
+
+.Setting up ApcServer
+
+[source,java]
+
+----
+
+ServiceCallbackHandler service = new ServiceCallbackHandler();
+
+ApcServer server = ApcServer.newBuilder()
+
+		.setSessionEventHandler(service)
+
+		.setApcSerializer(ApcSerializer.JObj)
+
+		.setApcThreadCount(2)
+
+		.setIoThreadCount(2)
+
+		.registerCallback(service, ISampleService.class)
+
+		.build();
+
+
+
+
+
+server.start(Config.getLoginPort());
+
+----
+
+
+
+.Server side ServiceCallbackHandler
+
+[source,java]
+
+----
+
+public static class ServiceCallbackHandler implements ISampleService, NetSessionEventHandler
+
+	{
+
+		ISampleServiceCallback userCallbak;
+
+		@Override
+
+		public void register(String name) {
+
+			NetSession client = ApcHelper.getCurrentNetSession();
+
+			userCallbak = client.newOutputProxy(ISampleServiceCallback.class);
+
+			userCallbak.onRegisterSucc(name);
+
+			System.out.println("received register from client, reply onRegisterSucc");
+
+		}
+
+
+
+	    ...
+
+	}
+
+----
+
+
+
+=== Monitor
+
+
+
+There are two ways to monitor lightmc:
+
+
+
+- setup a http server to receive performance data.
+
+- zipkin based
+
+
+
+In our production environment, we found the first one very useful. The http server will send statistic data to influxdb, which can be viewed on Grafana. Here is a screen shot:
+
+
+
+image::grafna.png[]
+
+
+
+Zipkin related function is only in demo stage, in which we send zipkin data by http client (and may cause performance issues), please refer to ZipKinRecorder.java for detail.
+
+
+
+
+
