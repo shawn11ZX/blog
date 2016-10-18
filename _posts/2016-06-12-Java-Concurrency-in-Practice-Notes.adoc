@@ -225,7 +225,7 @@ end sleep in ms: 1
 [math,file="ThreadPoolSizeInfer.png"]
 --
 \begin{align}
-    ( N_{thread} * C / ( C + W) ) / N_{cpu} &= {NumberOfCPU}  
+    ( N_{thread} * C / ( C + W) ) / N_{cpu} &= U_{cpu}  
 \end{align}
 --
 
