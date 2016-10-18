@@ -221,6 +221,14 @@ end sleep in ms: 1
 - 当CPU利用率为100%，Wait Time和Compute Time相同时，线程数为CPU*2
 - 当CPU利用率为100%，W/C为2时，线程数为CPU*3
 
+这个公式这样算更直观：
+[math,file="ThreadPoolSizeInfer.png"]
+--
+\begin{align}
+    ( N_{thread} * C / ( C + W) ) / N_{cpu} &= {NumberOfCPU}  
+\end{align}
+--
+
 == Liveness, Performane, and Testing
 
 === Chapter 11 Performance and Scalability
