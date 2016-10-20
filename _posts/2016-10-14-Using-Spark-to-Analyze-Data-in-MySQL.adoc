@@ -192,6 +192,13 @@ Dataset<Row> emptyDs = SparkConfig.sparkSession.createDataFrame(new ArrayList(),
 ----
 
 Alternatively, you can use a java bean class to represent schema.
+
+[NOTE]
+====
+Please note that the order of the StructField is important. If you union two DataFrame with schemas of same set of StructField but different order, spark won't complaint, but the result may be wrong.
+====
+
+
 [source,]
 ----
 Dataset<Row> emptyDs = SparkConfig.sparkSession.createDataFrame(new ArrayList(), MyBean.class);
@@ -223,3 +230,43 @@ useServerPrepStmts=false&rewriteBatchedStatements=true
 java.net.URISyntaxException: Relative path in absolute URI: file:F:/Workspace/spark/proj/audit_spark/spark-warehouse
 ----
 We need to set "spark.sql.warehouse.dir" to eliminate this exception.
+
+
+.Executor Timeout
+
+When executing some tasks, I met the following error:
+[source,]
+----
+16/10/19 16:08:49 WARN TaskSetManager: Lost task 21.0 in stage 14.0 (TID 828, localhost): ExecutorLostFailure (executor driver exited caused by one of the running tasks) Reason: Executor heartbeat timed out after 132088 ms
+----
+
+The solution is add the following config: 
+[source,]
+----
+--conf "spark.network.timeout=10000000" 
+spark.executor.heartbeatInterval
+----
+
+.MySQL wait_timeout
+
+Sometimes I run into:
+[source,]
+----
+The last packet successfully received from the server was 245,554 milliseconds ago.  The last packet sent successfully to the server was 245,671 milliseconds ago.
+----
+
+I guess there is some bug in the jdbc module of spark: It uses one connection for several steps other that getting a new one from connectionPool. And if one statement is take too much time, the state of the connection is error, which causes the steps behind it fail.
+
+There is no clean solution, I have to change /etc/my.cnf. Add the following lines to [mysqld] section of my.cnf
+[source,]
+----
+wait_timeout=31536000
+interactive_timeout =31536000
+----
+
+.jdbc timeout
+When loading data from single DB, sometimes reducing concurrency can help successfully loading.
+
+.out of memory 
+
+When running local spark, reducing concurrency will reduce memory requirement of certain jobs.
