@@ -244,7 +244,7 @@ The solution is add the following config:
 [source,]
 ----
 --conf "spark.network.timeout=10000000" 
-spark.executor.heartbeatInterval
+--conf "spark.executor.heartbeatInterval=10000000"
 ----
 
 .MySQL wait_timeout
@@ -264,8 +264,7 @@ wait_timeout=31536000
 interactive_timeout =31536000
 ----
 
-.jdbc timeout
-When loading data from single DB, sometimes reducing concurrency can help successfully loading.
+Also when loading data from single DB, sometimes reducing concurrency can help successfully loading.
 
 .out of memory 
 
