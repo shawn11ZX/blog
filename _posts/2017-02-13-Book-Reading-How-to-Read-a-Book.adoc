@@ -1,0 +1,74 @@
+---
+layout: post
+title: Book Reading: How to Read a Book
+---
+
+:toc: macro
+:toclevels: 4
+:sectnums:
+:imagesdir: /images
+:hp-tags: Reading, Book
+
+toc::[]
+
+__How to Read a Book __ is written by the American philosopher Mortimer J. Adler. It can be classified into the category of *Practical Books*. 
+
+In a nutshell, this book tries to help improve people's ability of reading books. It states that before reading any book there are four questions each reader must ask themselves: 
+
+- What is the book about as a whole
+- What is been said in detail and how
+- Is the book true, in whole and part
+- How is the book related to you? 
+
+By dividing people's ability of reading into the following four different but highly related levels, the author helps us find ways as to how to answer the above four questions.
+
+ - elementary reading
+ - inspectional reading
+ - analytical reading
+ - syntopical reading
+
+The book is consists of four parts with each part several chapters.
+
+== PART ONE: THE DIMENSIONS OF READING. 
+
+Given the same book, different reader can have very different gains. The difference is mainly caused by reader's active attitudes and reading skills. The more effort we put on reading the more we can obtain from it. 
+
+There are four levels of reading, each lower level is included in higher level. That is the higher the level one is choosing, the more effort he will need to pay, and finally the more he can get from the reading activity.
+
+=== elementary reading
+
+The first and lowest level of reading is *elementary reading*. The purpose of this level is answer the question: What the meaning of the sentences. This level can be further divided into four stages
+
+1. reading readiness, corresponding to pre-school experiences.
+2. word mastery
+3. vocabulary growth and utilization of context
+4. functional literacy. At this stage, children can read traffic signs of picture captions fairly easy. They are considered mature readers and can almost read any kinds of books.
+
+=== inspectional reading
+ 
+The second level of reading is *inspectional reading*, which answers the question: what the book is about as a whole. It can be divided into two steps:
+
+Step one is systematic skimming or pre-reading. By going through title, preface, table of content, index, publisher's blurb, and some intentionally chosen chapters or paragraphs one can get a brief impression of the book and classify it. We should consider ourselves as detectives looking for clues to a books general theme or idea.
+
+Step two is superficial reading. The trick is read from front to end with as little pause as possible, without looking up dictionaries, encyclopedia etc. As the author said, trying to understand every detail at this stage can easily destroy your interest and curiosity in this book. Even if you are not going to read it again, reading a whole book without total understanding is better than never read it.
+
+=== Demanding Reader
+
+To be good at reading, one need to be active, that is first ask the above mentioned four questions and then find answer with these questions in mind.
+
+During reading, we can also make marks on the book to:
+
+- keep us awake
+- help us clearly express our understanding and ideas
+- help us remember author's ideas.
+
+[quote]
+____
+The person who says he knows what he thinks but cannot express it usually does not know what he thinks.
+____
+
+== PART TWO: Analytical reading
+
+TO BE CONTINUED...
+
+== PART THREE: syntopical reading

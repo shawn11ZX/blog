@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Netty4 Recycler Code Reading Notes
+title: Code Reading: Netty4 Recycler
 ---
 
 :toc: macro

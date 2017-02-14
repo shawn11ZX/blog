@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Netty4-Transport Code Reading Notes
+title: Code Reading: Netty4 Transport
 ---
 
 :toc: macro
