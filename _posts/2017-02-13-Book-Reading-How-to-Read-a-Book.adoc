@@ -69,13 +69,37 @@ ____
 
 == PART TWO: Analytical reading
 
-=== Classifying a Book
+Analytical reading contains three phases, each of which emphasizes several rules.
 
-The first step of analytical reading is find the category of the book you are about to read, the earilier the better
+- Phase 1 answers the first question and contains 4 rules
+- Phase 2 answers the second with 4 rules.
+- Phase 3 answers the 3rd one, and contains 7 rules
 
-Books can be first classified into two categories: expository or fiction. The purpose of expository book is to convey knowledge.
+=== Rule #1, Classifying a Book
 
-Expository books can be further split into two kinds: practical and theoretical.
+The first step of analytical reading is find the category of the book you are about to read, the earlier the better.
+
+Books can be first classified into two categories: expository or fiction. The purpose of expository book is to convey knowledge. 
+
+We may or may not find hinds about a book's category from its title.
+
+Expository books can be further split into two kinds: practical and theoretical. The form focuses on HOW, the later concentrates on WHAT.
+
+Examples of practical books include:
+
+- engineering
+- medical
+- cooking
+
+Not only do practical books tells us HOW, they usually spend a lot of effort pursuade us to follow their instructions. After all, a practical book that is not following by its readers is actually meanless.
+
+Common words in practical books includes: should, ought, good or bad.
+
+Examples of theoretical books include:
+
+- history, describes true events happened at specific locations at specific times.
+- science, which is about general truth, most of which can't be easy verified in our daily life but based on accurate observation or experiments.
+- philosophy, which can't usually drift too far away from our daily experience.
 
 
 
