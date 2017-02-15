@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Code Reading: RestExpress
+title: Code Reading - RestExpress
 ---
 
 :toc: macro
