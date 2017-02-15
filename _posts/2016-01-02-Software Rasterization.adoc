@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Home Made Software Rasterization Example
+title: Software Rasterization implemented in Typescript
 ---
 
 * Source Code: https://github.com/shawn11ZX/softRasterization/[https://github.com/shawn11ZX/softRasterization/]
