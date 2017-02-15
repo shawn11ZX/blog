@@ -16,4 +16,6 @@ Rake::Jekyll::GitDeployTask.new(:deploy) do |t|
   }
   
   t.ssh_key_file = '.deploy_key'
+  
+  t.committer = 'Jekyll'
 end

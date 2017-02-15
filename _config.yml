@@ -1,6 +1,6 @@
 # Site settings
 title: Dizzy Land
-email: xxx@gmail.com
+email: sure.zhang@gmail.com
 description: > # this means to ignore newlines until "baseurl:"
   Shawn Zhang's blog
 baseurl: "" # the subpath of your site, e.g. /blog/
