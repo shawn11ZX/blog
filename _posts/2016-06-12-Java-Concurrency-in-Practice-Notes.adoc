@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Book Reading: Java Concurrency in Practice Notes
+title: Book Reading - Java Concurrency in Practice Notes
 ---
 
 

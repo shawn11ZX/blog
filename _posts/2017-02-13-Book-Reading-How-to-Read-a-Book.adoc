@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Book Reading: How to Read a Book
+title: Book Reading - How to Read a Book
 ---
 
 :toc: macro
