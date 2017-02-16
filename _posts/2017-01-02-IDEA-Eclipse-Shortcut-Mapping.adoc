@@ -1,0 +1,16 @@
+
+
+[width="100%",options="header,footer"]
+|====================
+| Function | Eclipse | IDEA | Description
+| Outline | Ctrl+O | Ctrl+F12 | Show function/variable list, which allows for quick navigation while you type in
+| Open File | Ctrl+R | Ctrl+N | Search By File name
+| Navi back | Ctrl+Left | Alt+Ctrl+Left | Go to previous position   
+| Find word at caret | Ctrl+K | Ctrl+F3 |
+| Find word at caret(backward) | Shift+Ctrl+K | Shift+F3 |
+| Find Reference | Ctrl+Shift+G | Alt+F7 | 
+| Rename | Alt+Shift+R | Shift+F6 | 
+| Generate Code | |Alt+Insert |
+| Find | Ctrl+F | Ctrl+F |
+| Orgnize Imports | Ctrl+Shift+O | Ctrl+Alt+O|
+|====================

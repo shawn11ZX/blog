@@ -71,12 +71,31 @@ ____
 
 Analytical reading contains three phases, each of which emphasizes several rules.
 
-- Phase 1 answers the first question and contains 4 rules
-- Phase 2 answers the second with 4 rules.
-- Phase 3 answers the 3rd one, and contains 7 rules
+- Phase 1 answers the question "What is the book about as a whole", and contains 4 rules:
+* Rule #1: Classify a Book
+* Rule #2: Summarize the content of the book with one sentence
+* Rule #3: List the outline of the book
+* Rule #4: Find out the question the author tries to answer in the book
 
-=== Rule #1, Classifying a Book
+- Phase 2 answers the question "What is been said in detail and how" with 4 rules.
+* Rule #5: For keywords, find out the exact definition
+* Rule #6: Find out key proposals that result in the main idea of the book
+* Rule #7: Figure out how these proposals are proven in the book.
+* Rule #8: Of the questions in Rule #4, make clear what of these are answered and what are not. Of the unanswered questions, what are recognized by the author.
 
+- Phase 3 answers the 3rd one by making remarks about the book, and contains 7 rules
+* Rule #9: Fully understand the book before making any judgement.
+* Rule #10: Don't be aggressive
+* Rule #11: Differentiate between knowledge and opinion before remarking
+
+If you want to make criticisms:
+
+* Rule #12: prove that the author's knowledge is not adequate
+* Rule #13: prove that the author's knowledge is wrong
+* Rule #13: prove that the author is illogical
+* Rule #13: prove that the author's analysis or reasoning is inadequate
+
+=== Classifying a Book
 The first step of analytical reading is find the category of the book you are about to read, the earlier the better.
 
 Books can be first classified into two categories: expository or fiction. The purpose of expository book is to convey knowledge. 
@@ -91,7 +110,7 @@ Examples of practical books include:
 - medical
 - cooking
 
-Not only do practical books tells us HOW, they usually spend a lot of effort pursuade us to follow their instructions. After all, a practical book that is not following by its readers is actually meanless.
+Not only do practical books tells us HOW, they usually spend a lot of effort persuade us to follow their instructions. After all, a practical book that is not following by its readers is actually mean-less.
 
 Common words in practical books includes: should, ought, good or bad.
 
@@ -101,6 +120,25 @@ Examples of theoretical books include:
 - science, which is about general truth, most of which can't be easy verified in our daily life but based on accurate observation or experiments.
 - philosophy, which can't usually drift too far away from our daily experience.
 
+=== Questions of the author
+At the beginning of writing, each writer usually has one or more questions. The book he is writing is the answer(s).
 
+For practical books, questions may be like:
+
+- What ends should be sought?
+- What means should be chosen to a given end?
+- Under given conditions, what's better? what's right? what's worse? 
+
+For theoretical books, these are example questions:
+
+- Does something exist?
+- What kind of thing is it?
+- What's the effect?
+
+=== Keywords
+No language is perfect. Every words can have several meanings and every meaning can be conveied by more than one word. That why we need to reach a common defination of the keywords in the book with the author.
+
+Personally, that's why I found it's something more easy to read the original version of a book even if it's written in a foreign langure, than to read a translated book in my native language. Because during translation, if the translators are a little careless, meanings of keywords will be mistranslated.
 
 == PART THREE: syntopical reading
+Synotopical reading is usually applied to reading of social science books. Since it's relative hard to find a main authentic book of a given subject, we need to read and compare several books to understand the subject. 
